@@ -1,0 +1,17 @@
+.carousel {
+  -fx-skin: "hs.mediasystem.CarouselSkin";
+  -fx-border-width: 1px;
+  -fx-border-color: red;
+}
+
+.carousel .scroll-area {
+  -fx-border-width: 2px;
+  -fx-border-color: green;
+}
+
+.carousel-cell {
+  -fx-skin: "hs.mediasystem.CarouselCellSkin";
+  -fx-border-width: 3px;
+  -fx-border-color: blue;
+  -fx-text-fill: red;
+}
