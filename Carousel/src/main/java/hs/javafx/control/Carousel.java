@@ -1,7 +1,11 @@
 package hs.javafx.control;
 
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ChangeListener;
@@ -36,6 +40,30 @@ public class Carousel<T> extends Control {
   private final IntegerProperty visibleCellsCount = new SimpleIntegerProperty(30);
   public final IntegerProperty visibleCellsCountProperty() { return visibleCellsCount; }
   public final int getVisibleCellsCount() { return visibleCellsCount.get(); }
+
+  private final DoubleProperty cellAlignment = new SimpleDoubleProperty(0.5);
+  public final DoubleProperty cellAlignmentProperty() { return cellAlignment; }
+  public final double getCellAlignment() { return cellAlignment.get(); }
+
+  private final BooleanProperty reflectionEnabled = new SimpleBooleanProperty(true);
+  public final BooleanProperty reflectionEnabledProperty() { return reflectionEnabled; }
+  public final boolean getReflectionEnabled() { return reflectionEnabled.get(); }
+
+  private final DoubleProperty fieldOfViewRatio = new SimpleDoubleProperty(0.5);
+  public final DoubleProperty fieldOfViewRatioProperty() { return fieldOfViewRatio; }
+  public final double getFieldOfViewRatio() { return fieldOfViewRatio.get(); }
+
+  private final DoubleProperty radiusRatio = new SimpleDoubleProperty(0.5);
+  public final DoubleProperty radiusRatioProperty() { return radiusRatio; }
+  public final double getRadiusRatio() { return radiusRatio.get(); }
+
+  private final DoubleProperty viewDistanceRatio = new SimpleDoubleProperty(1.0);
+  public final DoubleProperty viewDistanceRatioProperty() { return viewDistanceRatio; }
+  public final double getViewDistanceRatio() { return viewDistanceRatio.get(); }
+
+  private final DoubleProperty density = new SimpleDoubleProperty(0.02);
+  public final DoubleProperty densityProperty() { return density; }
+  public final double getDensity() { return density.get(); }
 
   public Carousel() {
     getStyleClass().setAll("carousel");

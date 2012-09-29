@@ -1,5 +1,5 @@
 .carousel {
-  -fx-skin: "hs.mediasystem.CarouselSkin";
+  -fx-skin: "hs.javafx.control.RayCarouselSkin";
   -fx-border-width: 1px;
   -fx-border-color: red;
 }
@@ -7,11 +7,13 @@
 .carousel .scroll-area {
   -fx-border-width: 2px;
   -fx-border-color: green;
+  
+  -fx-background-color: linear-gradient(to bottom, black 0%, black 50%, grey 51%, black);
 }
 
 .carousel-cell {
-  -fx-skin: "hs.mediasystem.CarouselCellSkin";
-  -fx-border-width: 3px;
-  -fx-border-color: blue;
+  -fx-skin: "hs.javafx.control.CarouselCellSkin";
+/*   -fx-border-width: 5px; */
+/*   -fx-border-color: blue; */
   -fx-text-fill: red;
 }

@@ -12,8 +12,18 @@ import javafx.collections.WeakListChangeListener;
 import javafx.scene.control.IndexedCell;
 
 public class CarouselCell<T> extends IndexedCell<T> {
-  double startDistanceToMiddle;
+  double startDistanceToMiddle;  // TODO visibility
   double currentDistanceToMiddle;
+
+  private double cellSpacePortion = 0.6;
+
+  public double getMaxCellWidth() {
+    return getCarousel().getHeight() * cellSpacePortion;
+  }
+
+  public double getMaxCellHeight() {
+    return getCarousel().getHeight() * cellSpacePortion;
+  }
 
   public CarouselCell() {
     getStyleClass().setAll("carousel-cell");
@@ -83,6 +93,7 @@ public class CarouselCell<T> extends IndexedCell<T> {
 
       if(item == null || !item.equals(getItem())) {
         System.out.println("Updating item: " + item);
+
         updateItem(item, false);
       }
     }

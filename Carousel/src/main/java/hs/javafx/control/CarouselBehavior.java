@@ -9,6 +9,7 @@ import javafx.scene.control.Control;
 import javafx.scene.control.FocusModel;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 
 import com.sun.javafx.scene.control.behavior.BehaviorBase;
 import com.sun.javafx.scene.control.behavior.KeyBinding;
@@ -31,6 +32,15 @@ public class CarouselBehavior<T> extends BehaviorBase<Carousel<T>> {
     System.out.println("Action: " + action);
 
     super.callAction(action);
+  }
+
+  @Override
+  public void mousePressed(MouseEvent event) {
+    super.mousePressed(event);
+
+    if(!getControl().isFocused() && getControl().isFocusTraversable()) {
+      getControl().requestFocus();
+    }
   }
 
   private void focusPreviousRow() {
