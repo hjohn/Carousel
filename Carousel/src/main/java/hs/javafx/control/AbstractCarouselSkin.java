@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 
 import javafx.animation.Transition;
 import javafx.beans.InvalidationListener;
@@ -148,8 +149,6 @@ public abstract class AbstractCarouselSkin<T> extends SkinBase<Carousel<T>, Caro
         cell.updateCarousel(getSkinnable());
         cell.updateIndex(i);
 
-        cell.currentDistanceToMiddle = 0;
-
         cells.add(cell);
         getChildren().add(cell);
       }
@@ -216,48 +215,49 @@ public abstract class AbstractCarouselSkin<T> extends SkinBase<Carousel<T>, Caro
   }
 
   private void doLayout() {
-    Shape currentClip = new Rectangle(0, 0, getWidth(), getHeight());
+    Shape cumulativeClip = null;
     int selectedIndex = getSkinnable().getFocusModel().getFocusedIndex();
 
-    List<Node> children = new ArrayList<>(getChildren());
+    /*
+     * Positions the Cells in front-to-back order.  This is done in order to clip the reflections
+     * of cells positioned behind other cells using a cumulative clip.  Reflections would otherwise
+     * blend with each other as they are partially transparent in nature.
+     */
 
-    Collections.reverse(children);
+    ListIterator<Node> iterator = getChildren().listIterator(getChildren().size());
 
-    for(Node child : children) {
+    while(iterator.hasPrevious()) {
       @SuppressWarnings("unchecked")
-      CarouselCell<T> cell = (CarouselCell<T>)child;
+      CarouselCell<T> cell = (CarouselCell<T>)iterator.previous();
 
-      if(cell.isEmpty()) {
-        cell.setVisible(false);
-      }
-      else {
-        cell.setVisible(true);
+      cell.setVisible(!cell.isEmpty());
 
-        double distanceFromMiddle = selectedIndex - cell.getIndex() - fractionalIndex;
+      if(!cell.isEmpty()) {
+        Shape clip = layoutCell(cell, selectedIndex - cell.getIndex() - fractionalIndex);
 
-        Point2D position = positionCell(cell, distanceFromMiddle, cell.getMaxCellWidth(), cell.getMaxCellHeight());
-        Shape c = layoutCell(cell, distanceFromMiddle, cell.getMaxCellWidth(), cell.getMaxCellHeight());
+        layoutInArea(cell, getWidth() / 2, getHeight() / 2, 0, 0, 0, HPos.CENTER, VPos.CENTER);
 
-        layoutInArea(child, getWidth() / 2 - position.getX(), getHeight() / 2 - position.getY(), 0, 0, 0, HPos.CENTER, VPos.CENTER);
+        if(cumulativeClip != null) {
+          Shape cellClip = Shape.intersect(cumulativeClip, new Rectangle(0, 0, getWidth(), getHeight()));  // TODO there must be a better way to just copy a Shape...
+          Point2D localToParent = cell.localToParent(0, 0);
 
-        Shape newClip;
-        if(c != null) {
-          c.getTransforms().addAll(cell.getLocalToParentTransform());
-          c.getTransforms().addAll(cell.getParent().getLocalToParentTransform());
-          newClip = Shape.subtract(currentClip, c);
+          cellClip.getTransforms().add(new Translate(-localToParent.getX(), -localToParent.getY()));
+
+          cell.setClip(cellClip);
         }
         else {
-          newClip = Shape.intersect(currentClip, new Rectangle(0, 0, getWidth(), getHeight()));  // TODO there must be a better way to just copy a Shape...
+          cell.setClip(null);
         }
 
-        Point2D localToParent = cell.localToParent(0, 0);
-        localToParent = cell.getParent().localToParent(localToParent);
+        if(clip != null) {
+          clip.getTransforms().add(cell.getLocalToParentTransform());
 
-        currentClip.getTransforms().add(new Translate(-localToParent.getX(), -localToParent.getY()));
+          if(cumulativeClip == null) {
+            cumulativeClip = new Rectangle(0, 0, getWidth(), getHeight());
+          }
 
-        cell.setClip(currentClip);
-
-        currentClip = newClip;
+          cumulativeClip = Shape.subtract(cumulativeClip, clip);
+        }
       }
     }
 
@@ -265,6 +265,5 @@ public abstract class AbstractCarouselSkin<T> extends SkinBase<Carousel<T>, Caro
   }
 
   // index = fractional index
-  public abstract Shape layoutCell(CarouselCell<T> cell, double index, double maxCellWidth, double maxCellHeight);
-  public abstract Point2D positionCell(CarouselCell<T> cell, double index, double maxCellWidth, double maxCellHeight);
+  public abstract Shape layoutCell(CarouselCell<T> cell, double index);
 }

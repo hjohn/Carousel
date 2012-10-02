@@ -1,20 +1,9 @@
 package hs.javafx.control;
 
-import hs.mediasystem.db.ConnectionPool;
-import hs.mediasystem.db.Database;
-import hs.mediasystem.db.Database.Transaction;
-import hs.mediasystem.db.Record;
-import hs.mediasystem.db.SimpleConnectionPoolDataSource;
-import hs.mediasystem.util.ini.Ini;
-import hs.mediasystem.util.ini.Section;
-
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 import javafx.application.Application;
 import javafx.beans.property.BooleanProperty;
@@ -33,9 +22,6 @@ import javafx.scene.layout.GridPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-
-import javax.inject.Provider;
-import javax.sql.ConnectionPoolDataSource;
 
 public class TestCoverflow extends Application {
   public static void main(String[] args) {
@@ -108,6 +94,7 @@ public class TestCoverflow extends Application {
     final DoubleProperty radiusRatio = new SimpleDoubleProperty(0.5);
     final DoubleProperty viewDistanceRatio = new SimpleDoubleProperty(0.5);
     final DoubleProperty density = new SimpleDoubleProperty(0.01);
+    final DoubleProperty cellSizeRatio = new SimpleDoubleProperty(0.6);
 
     GridPane gridPane = new GridPane();
 
@@ -160,6 +147,15 @@ public class TestCoverflow extends Application {
       textProperty().bind(density.asString("%6.4f"));
     }}, 3, 6);
 
+    gridPane.add(new Label("cellSizeRatio (0.1 - 1.0)"), 1, 7);
+    gridPane.add(new Slider(0.1, 1.0, 0.6) {{
+      valueProperty().bindBidirectional(cellSizeRatio);
+      setBlockIncrement(0.05);
+    }}, 2, 7);
+    gridPane.add(new Label() {{
+      textProperty().bind(cellSizeRatio.asString("%4.2f"));
+    }}, 3, 7);
+
     borderPane.setTop(carousel);
     borderPane.setBottom(gridPane);
 
@@ -169,35 +165,12 @@ public class TestCoverflow extends Application {
     carousel.radiusRatioProperty().bind(radiusRatio);
     carousel.viewDistanceRatioProperty().bind(viewDistanceRatio);
     carousel.densityProperty().bind(density);
-
-    /// carousel.setEffect(new Reflection());
+    carousel.cellSizeRatioProperty().bind(cellSizeRatio);
 
     stage.setScene(new Scene(borderPane));
     stage.setWidth(800);
     stage.setHeight(600);
     stage.show();
-  }
-
-  private ConnectionPoolDataSource configureDataSource(Section section)  {
-    try {
-      Class.forName(section.get("driverClass"));
-      Properties properties = new Properties();
-
-      for(String key : section) {
-        if(!key.equals("driverClass") && !key.equals("postConnectSql") && !key.equals("url")) {
-          properties.put(key, section.get(key));
-        }
-      }
-
-      SimpleConnectionPoolDataSource dataSource = new SimpleConnectionPoolDataSource(section.get("url"), properties);
-
-      dataSource.setPostConnectSql(section.get("postConnectSql"));
-
-      return dataSource;
-    }
-    catch(ClassNotFoundException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   private static class ImageHandle {

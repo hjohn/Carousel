@@ -32,8 +32,6 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   private class CellConfigurator {
     private final CarouselCell<T> cell;
     private final double index;
-    private final double maxCellWidth;
-    private final double maxCellHeight;
 
     private Effect reflection;
     private double reflectionTop;
@@ -50,20 +48,18 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
     private PerspectiveTransform perspectiveTransform;
 
-    public CellConfigurator(CarouselCell<T> cell, double index, double maxCellWidth, double maxCellHeight) {
+    public CellConfigurator(CarouselCell<T> cell, double index) {
       this.cell = cell;
       this.index = index;
-      this.maxCellWidth = maxCellWidth;
-      this.maxCellHeight = maxCellHeight;
     }
 
     public void addReflection() {
       double reflectionMaxHeight = 50;
 
-      double w = cell.prefWidth(50);
       double h = cell.prefHeight(50);
 
       double verticalAlignment = getSkinnable().getCellAlignment();
+      double maxCellHeight = getSkinnable().getMaxCellHeight();
 
       double topOfCell = (maxCellHeight - h) * verticalAlignment;
       double reflectionTop = 2 * (maxCellHeight - topOfCell - h);
@@ -111,6 +107,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
       double carouselRadius = getSkinnable().getWidth() * getSkinnable().getRadiusRatio();
       double halfCellWidth = cell.prefWidth(50) * 0.5;
       double h = cell.prefHeight(50);
+      double maxCellHeight = getSkinnable().getMaxCellHeight();
 
       double uy = -maxCellHeight * 0.5 + (maxCellHeight - h) * getSkinnable().getCellAlignment();
       double ly = uy + h + reflectionSpace;
@@ -206,8 +203,8 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   @Override
-  public Shape layoutCell(CarouselCell<T> cell, double index, double maxCellWidth, double maxCellHeight) {
-    CellConfigurator configurator = new CellConfigurator(cell, index, maxCellWidth, maxCellHeight);
+  public Shape layoutCell(CarouselCell<T> cell, double index) {
+    CellConfigurator configurator = new CellConfigurator(cell, index);
 
     if(getSkinnable().getReflectionEnabled()) {
       configurator.addReflection();
@@ -220,15 +217,6 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     cell.setEffect(perspectiveTransform);
 
     return configurator.getReflectionClip();
-  }
-
-  @Override
-  public Point2D positionCell(CarouselCell<T> cell, double index, double maxCellWidth, double maxCellHeight) {
-    double visibleCellsCount = getVisibleCellsCount();
-
-    double position = Math.sin(index / visibleCellsCount * Math.PI) * (getWidth() / 3);
-
-    return new Point2D(0, 0);
   }
 
   private static Point2D project(Point3D p, double viewDistance, double fov, double cw, double ch) {
