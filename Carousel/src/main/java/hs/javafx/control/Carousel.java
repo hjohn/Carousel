@@ -52,6 +52,10 @@ public class Carousel<T> extends Control {
   public final BooleanProperty reflectionEnabledProperty() { return reflectionEnabled; }
   public final boolean getReflectionEnabled() { return reflectionEnabled.get(); }
 
+  private final BooleanProperty clipReflections = new SimpleBooleanProperty(true);
+  public final BooleanProperty clipReflectionsProperty() { return clipReflections; }
+  public final boolean getClipReflections() { return clipReflections.get(); }
+
   private final DoubleProperty fieldOfViewRatio = new SimpleDoubleProperty(0.5);
   public final DoubleProperty fieldOfViewRatioProperty() { return fieldOfViewRatio; }
   public final double getFieldOfViewRatio() { return fieldOfViewRatio.get(); }

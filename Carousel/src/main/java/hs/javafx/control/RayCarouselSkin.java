@@ -24,6 +24,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
     carousel.cellAlignmentProperty().addListener(invalidationListener);
     carousel.reflectionEnabledProperty().addListener(invalidationListener);
+    carousel.clipReflectionsProperty().addListener(invalidationListener);
     carousel.fieldOfViewRatioProperty().addListener(invalidationListener);
     carousel.radiusRatioProperty().addListener(invalidationListener);
     carousel.viewDistanceRatioProperty().addListener(invalidationListener);
@@ -163,7 +164,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     public Shape getReflectionClip() {
-      if(reflection == null) {
+      if(reflection == null || !getSkinnable().getClipReflections()) {
         return null;
       }
 
