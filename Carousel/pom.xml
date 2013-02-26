@@ -15,13 +15,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>javafx</groupId>
-			<artifactId>javafx</artifactId>
-			<scope>system</scope>
-			<systemPath>C:\Program Files (x86)\Java\jdk1.7.0_10\jre\lib\jfxrt.jar</systemPath>
-			<version>2.2</version>
-		</dependency>
-		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>1.9.0</version>
