@@ -36,63 +36,8 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     carouselViewFractionProperty().addListener(invalidationListener);
   }
 
-  public Point2D[] project(Point3D[] points) {
-    double viewDistance = getViewDistanceRatio() * getCarouselRadius();
-    double fov = (viewDistance - getCarouselRadius());
-
-    // Z = -1 when normalized
-
-    Point2D[] projectedPoints = new Point2D[points.length];
-
-    for(int i = 0; i < points.length; i++) {
-      projectedPoints[i] = project(points[i], viewDistance, fov);
-    }
-
-    return projectedPoints;
-  }
-
-  public Rectangle2D calculateCellBounds(TreeCell<T> cell) {
-    Dimension2D cellSize = getCellSize2(cell);
-
-    double halfCellWidth = 0.5 * cellSize.getWidth();
-    double cellHeight = cellSize.getHeight();
-    double maxCellHeight = getMaxCellHeight();
-
-    return new Rectangle2D(
-      -halfCellWidth,
-      -maxCellHeight * (1.0 - getViewAlignment()) + (maxCellHeight - cellHeight) * getCellAlignment(),
-      2 * halfCellWidth,
-      cellHeight
-    );
-  }
-
-  public Rectangle2D adjustCellRectangle(Rectangle2D cellRectangle) {
-    double reflectionMaxHeight = 50;
-
-    double h = cellRectangle.getHeight();
-    double unusedHeight = getMaxCellHeight() - h;
-
-    double horizonDistance = unusedHeight - unusedHeight * getCellAlignment();
-    double reflectionPortion = (reflectionMaxHeight - horizonDistance) / h;
-
-    if(reflectionPortion < 0 || horizonDistance >= reflectionMaxHeight) {
-      return cellRectangle;
-    }
-
-    if(reflectionPortion > 1) {
-      reflectionPortion = 1;
-    }
-
-    return new Rectangle2D(
-      cellRectangle.getMinX(),
-      cellRectangle.getMinY(),
-      cellRectangle.getWidth(),
-      cellRectangle.getHeight() + horizonDistance * 2 + h * reflectionPortion
-    );
-  }
-
   @Override
-  public Shape layoutCell(TreeCell<T> cell, double index) {
+  public Shape applyEffectsToCellAndReturnClip(TreeCell<T> cell, double index) {
 
     /*
      * Calculate the cells bounds adjusting for cell height, cell alignment and carousel
@@ -105,7 +50,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     if(getReflectionEnabled()) {
 
       /*
-       * Do adjustments for the reflection.
+       * Do additional adjustments for the reflection.
        */
 
       cellRectangle = adjustCellRectangle(cellRectangle);
@@ -154,6 +99,61 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     return null;
   }
 
+  protected Point2D[] project(Point3D[] points) {
+    double viewDistance = getViewDistanceRatio() * getCarouselRadius();
+    double fov = (viewDistance - getCarouselRadius());
+
+    // Z = -1 when normalized
+
+    Point2D[] projectedPoints = new Point2D[points.length];
+
+    for(int i = 0; i < points.length; i++) {
+      projectedPoints[i] = project(points[i], viewDistance, fov);
+    }
+
+    return projectedPoints;
+  }
+
+  protected Rectangle2D calculateCellBounds(TreeCell<T> cell) {
+    Dimension2D cellSize = getNormalizedCellSize(cell);
+
+    double halfCellWidth = 0.5 * cellSize.getWidth();
+    double cellHeight = cellSize.getHeight();
+    double maxCellHeight = getMaxCellHeight();
+
+    return new Rectangle2D(
+      -halfCellWidth,
+      -maxCellHeight * (1.0 - getViewAlignment()) + (maxCellHeight - cellHeight) * getCellAlignment(),
+      2 * halfCellWidth,
+      cellHeight
+    );
+  }
+
+  protected Rectangle2D adjustCellRectangle(Rectangle2D cellRectangle) {
+    double reflectionMaxHeight = 50;
+
+    double h = cellRectangle.getHeight();
+    double unusedHeight = getMaxCellHeight() - h;
+
+    double horizonDistance = unusedHeight - unusedHeight * getCellAlignment();
+    double reflectionPortion = (reflectionMaxHeight - horizonDistance) / h;
+
+    if(reflectionPortion < 0 || horizonDistance >= reflectionMaxHeight) {
+      return cellRectangle;
+    }
+
+    if(reflectionPortion > 1) {
+      reflectionPortion = 1;
+    }
+
+    return new Rectangle2D(
+      cellRectangle.getMinX(),
+      cellRectangle.getMinY(),
+      cellRectangle.getWidth(),
+      cellRectangle.getHeight() + horizonDistance * 2 + h * reflectionPortion
+    );
+  }
+
   private Point2D project(Point3D p, double viewDistance, double fov) {
     return new Point2D(snapPosition(p.getX() * fov / (p.getZ() + viewDistance)), snapPosition(p.getY() * fov / (p.getZ() + viewDistance)));
   }
@@ -170,10 +170,10 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
   private static final double REFLECTION_OPACITY = 0.5;
 
-  public Shape adjustTransform(TreeCell<T> cell, PerspectiveTransform perspectiveTransform) {
+  protected Shape adjustTransform(TreeCell<T> cell, PerspectiveTransform perspectiveTransform) {
     double reflectionMaxHeight = 50;
 
-    double cellHeight = getCellSize2(cell).getHeight();
+    double cellHeight = getNormalizedCellSize(cell).getHeight();
     double unusedHeight = getMaxCellHeight() - cellHeight;
 
     double horizonDistance = unusedHeight - unusedHeight * getCellAlignment();
@@ -220,7 +220,8 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
    * the cells after they passed the center to keep the Cells correctly visible for the
    * viewer.
    */
-  public void applyViewRotation(Point3D[] points, double index) {
+  @SuppressWarnings("static-method")
+  protected void applyViewRotation(Point3D[] points, double index) {
     double cellsToRotate = 2;
 
     if(index < cellsToRotate) {
@@ -234,7 +235,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
   }
 
-  public Point3D[] calculateCarouselCoordinates(Rectangle2D cellRectangle, double index) {
+  protected Point3D[] calculateCarouselCoordinates(Rectangle2D cellRectangle, double index) {
     double angleOnCarousel = 2 * Math.PI * getCarouselViewFraction() / getInternalVisibleCellsCount() * index + Math.PI * 0.5;
 
     double carouselRadius = getCarouselRadius();
@@ -255,7 +256,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     return new Point3D[] {new Point3D(lx, ty, lz), new Point3D(rx, ty, rz), new Point3D(lx, by, lz), new Point3D(rx, by, rz)};
   }
 
-  private double getCarouselRadius() {
+  protected double getCarouselRadius() {
     return getSkinnable().getWidth() * getRadiusRatio();
   }
 }

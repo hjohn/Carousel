@@ -27,7 +27,7 @@ import javafx.scene.shape.Shape;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 
-public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
+public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   private final DoubleProperty cellAlignment = new SimpleDoubleProperty(0.8);
   public final DoubleProperty cellAlignmentProperty() { return cellAlignment; }
   public final double getCellAlignment() { return cellAlignment.get(); }
@@ -68,15 +68,6 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
   public final DoubleProperty maxCellHeightProperty() { return maxCellHeight; }
   public final double getMaxCellHeight() { return maxCellHeight.get(); }
 
-  private final ArrayList<TreeCell<T>> cells = new ArrayList<>();
-
-  private double internalVisibleCellsCount;
-
-  protected double getInternalVisibleCellsCount() {
-    return internalVisibleCellsCount;
-  }
-
-
   private final Transition transition = new Transition() {
     {
       setCycleDuration(Duration.millis(500));
@@ -86,51 +77,11 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
     protected void interpolate(double frac) {
       fractionalIndex = startFractionalIndex - startFractionalIndex * frac;
 
-      sortChildren();
       getSkinnable().requestLayout();
     }
   };
 
-  private void sortChildren() {
-
-    /*
-     * Update the cell indices.
-     */
-
-    int index = getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
-    int visibleCellsCount = cells.size();
-    int start = index - (visibleCellsCount - 1) / 2;
-    int end = index + visibleCellsCount / 2;
-
-    double opacity = ((fractionalIndex > 0 ? fractionalIndex : 1 + fractionalIndex % 1) + 0.5) % 1;
-
-    for(int i = start; i <= end; i++) {
-      TreeCell<T> carouselCell = cells.get((i + visibleCellsCount) % visibleCellsCount);
-
-      carouselCell.updateIndex(i);
-
-      if(i == start) {
-        carouselCell.setOpacity(opacity);
-      }
-      else if(i == end) {
-        carouselCell.setOpacity(1.0 - opacity);
-      }
-      else {
-        carouselCell.setOpacity(1.0);
-      }
-    }
-
-    /*
-     * Resort the children of the StackPane so the cells closest to center are on top.  A temporary list
-     * is used to prevent events firing (and to avoid duplicate items in the Scene caused by the sorting steps).
-     */
-    // TODO perhaps this is possible to achieve with toFront() ?
-
-    List<Node> temporaryList = new ArrayList<>(getChildren());
-    Collections.sort(temporaryList, Z_ORDER_FRAC);
-    getChildren().setAll(temporaryList);
-  }
-
+  private double internalVisibleCellsCount;  // TODO must this be double?
   private double startFractionalIndex;
   private double fractionalIndex;
 
@@ -142,15 +93,12 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
     InvalidationListener cellCountInvalidationListener = new InvalidationListener() {
       @Override
       public void invalidated(Observable observable) {
-        allocateCells();
-        sortChildren();
+        getSkinnable().requestLayout();
       }
     };
 
     carousel.widthProperty().addListener(cellCountInvalidationListener);
     densityProperty().addListener(cellCountInvalidationListener);
-
-    allocateCells();
 
     carousel.getFocusModel().focusedIndexProperty().addListener(new ChangeListener<Number>() {
       @Override
@@ -167,72 +115,71 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
     });
   }
 
-  // Goal: Spacings between Cells should remain similar when width changes
-  private void allocateCells() {
-    double widthFactor = getDensity();
+  protected double getInternalVisibleCellsCount() {
+    return internalVisibleCellsCount;
+  }
 
-    internalVisibleCellsCount = getSkinnable().getWidth() * widthFactor;
-    internalVisibleCellsCount = internalVisibleCellsCount < 3 ? 3 : internalVisibleCellsCount;
+  private void allocateAndSortCells() {
+    getCellPool().reset();
+
+    List<TreeCell<T>> children = new ArrayList<>();
+    double cellCount = getSkinnable().getWidth() * getDensity();
+
+    internalVisibleCellsCount = cellCount < 3 ? 3 : cellCount;
 
     int preferredCellCount = (int)internalVisibleCellsCount;
 
-    if(cells.size() > preferredCellCount) {
-      List<TreeCell<T>> cellsToBeDeleted = cells.subList(preferredCellCount, cells.size());
+    int selectedIndex = getSkinnable().getFocusModel().getFocusedIndex();
+    int index = selectedIndex - (int)Math.round(fractionalIndex);
+    int start = index - (preferredCellCount - 1) / 2;
+    int end = index + preferredCellCount / 2;
 
-      for(TreeCell<T> carouselCell : cellsToBeDeleted) {
-        carouselCell.updateIndex(-1);
+    double opacity = ((fractionalIndex > 0 ? fractionalIndex : 1 + fractionalIndex % 1) + 0.5) % 1;  // opacity for edge cells to achieve a gradual fade in/out
+
+    for(int i = start; i <= end; i++) {
+      if(i >= 0 && i <= getSkinnable().getExpandedItemCount()) {
+        TreeCell<T> cell = getCellPool().getCell(i);
+
+        children.add(cell);
+
+        if(i == start) {
+          cell.setOpacity(opacity);
+        }
+        else if(i == end) {
+          cell.setOpacity(1.0 - opacity);
+        }
+        else {
+          cell.setOpacity(1.0);
+        }
       }
-
-      getChildren().removeAll(cellsToBeDeleted);
-      cellsToBeDeleted.clear();
     }
-    else if(cells.size() < preferredCellCount) {
-      for(int i = cells.size(); i < preferredCellCount; i++) {
-        TreeCell<T> cell = createCell();
 
-        cell.updateTreeView(getSkinnable());
-        cell.updateIndex(i);
+    getCellPool().trim();
 
-        cells.add(cell);
-        getChildren().add(cell);
-      }
-    }
+    /*
+     * Sort the children and add them to the container.
+     */
+
+    Collections.sort(children, Z_ORDER_FRACTIONAL);
+
+    getChildren().setAll(children);
   }
 
-  private final Comparator<Node> Z_ORDER_FRAC = new Comparator<Node>() {
+  private final Comparator<Node> Z_ORDER_FRACTIONAL = new Comparator<Node>() {
     @Override
     public int compare(Node o1, Node o2) {
       TreeCell<?> cell1 = (TreeCell<?>)o1;
       TreeCell<?> cell2 = (TreeCell<?>)o2;
 
       int selectedIndex = getSkinnable().getFocusModel().getFocusedIndex();
+      int currentIndex = selectedIndex - (int)Math.round(fractionalIndex);
 
-      int dist1 = Math.abs(selectedIndex - cell1.getIndex() - (int)Math.round(fractionalIndex));
-      int dist2 = Math.abs(selectedIndex - cell2.getIndex() - (int)Math.round(fractionalIndex));
+      int dist1 = Math.abs(cell1.getIndex() - currentIndex);
+      int dist2 = Math.abs(cell2.getIndex() - currentIndex);
 
       return Integer.compare(dist2, dist1);
     }
   };
-
-//  @Override
-//  private TreeCell<T> createCell() {
-//    Callback<Carousel<T>, CarouselCell<T>> cellFactory = getSkinnable().getCellFactory();
-//
-//    if(cellFactory == null) {
-//      return new CarouselCell<T>() {
-//        @Override
-//        protected void updateItem(T item, boolean empty) {
-//          super.updateItem(item, empty);
-//
-//          if(!empty) {
-//            setText(item.toString());
-//          }
-//        }
-//      };
-//    }
-//
-//    return cellFactory.call(getSkinnable());
-//  }
 
   @Override
   protected double computeMinWidth(double height) {
@@ -254,15 +201,15 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
     return 16;
   }
 
-//  @Override
-//  protected void layoutChildren() {
-//    doLayout();
-//  }
-  protected double getCellAspectRatio() {
-    return getMaxCellWidth() / getMaxCellHeight();
-  }
-
-  public Dimension2D getCellSize2(TreeCell<T> cell) {
+  /**
+   * Returns the width and height of the cell when it is made to fit within
+   * the MaxCellWidth and MaxCellHeight restrictions while preserving the aspect
+   * ratio.
+   *
+   * @param cell a cell to calculate the dimensions for
+   * @return the normalized dimensions
+   */
+  protected Dimension2D getNormalizedCellSize(TreeCell<T> cell) {
     double prefWidth = cell.prefWidth(-1);
     double prefHeight = cell.prefHeight(-1);
 
@@ -278,14 +225,12 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
     return new Dimension2D(prefWidth, prefHeight);
   }
 
-  public Dimension2D getCellSize(TreeCell<T> cell) {
-    double prefWidth = cell.prefWidth(-1);
-    double prefHeight = cell.prefHeight(-1);
+  @Override
+  protected void layoutChildren(double x, double y, double w, double h) {
+    getSkinnable().setClip(new Rectangle(x, y, w, h));
 
-    return new Dimension2D(prefWidth, prefHeight);
-  }
+    allocateAndSortCells();
 
-  private void doLayout(double w, double h) {
     Shape cumulativeClip = null;
     int selectedIndex = getSkinnable().getFocusModel().getFocusedIndex();
 
@@ -304,17 +249,12 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
       cell.setVisible(!cell.isEmpty());
 
       if(!cell.isEmpty()) {
-        Shape clip = layoutCell(cell, selectedIndex - cell.getIndex() - fractionalIndex);
+        Shape clip = applyEffectsToCellAndReturnClip(cell, selectedIndex - cell.getIndex() - fractionalIndex);
 
-        Dimension2D cellSize = getCellSize(cell);
-        System.out.println(">>> celllsize = " + cellSize + " min: " + cell.minWidth(-1) + "x" + cell.minHeight(-1) + "; pref: " + cell.prefWidth(-1) + "x" + cell.prefHeight(-1) + "; max: " + cell.maxWidth(-1) + "x" + cell.maxHeight(-1));
-        layoutInArea(cell, w / 2, h / 2, cellSize.getWidth(), cellSize.getHeight(), 0, HPos.CENTER, VPos.CENTER);
-//        layoutInArea(cell, w / 2, h / 2, 0, 0, 0, HPos.CENTER, VPos.CENTER);
-
-  //      System.out.println(">>> layoutInArea: " + w/2 + ": " + h/2 + " index=" + (selectedIndex - cell.getIndex() - fractionalIndex) + ": " + cell);
+        layoutInArea(cell, w / 2, h / 2, cell.prefWidth(-1), cell.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
 
         if(cumulativeClip != null) {
-          Shape cellClip = Shape.intersect(cumulativeClip, new Rectangle(0, 0, w, h));  // TODO there must be a better way to just copy a Shape...
+          Shape cellClip = Shape.intersect(cumulativeClip, new Rectangle(x, y, w, h));  // TODO there must be a better way to just copy a Shape...
           Point2D localToParent = cell.localToParent(0, 0);
 
           cellClip.getTransforms().add(new Translate(-localToParent.getX(), -localToParent.getY()));
@@ -329,36 +269,15 @@ public abstract class AbstractCarouselSkin<T> extends TreeViewSkin<T> {
           clip.getTransforms().add(cell.getLocalToParentTransform());
 
           if(cumulativeClip == null) {
-            cumulativeClip = new Rectangle(0, 0, w, h);
+            cumulativeClip = new Rectangle(x, y, w, h);
           }
 
           cumulativeClip = Shape.subtract(cumulativeClip, clip);  // TODO a copy is made here...
         }
       }
     }
-
-//    setClip(new Rectangle(0, 0, getWidth(), getHeight()));
   }
 
-  // index = fractional index
-  public abstract Shape layoutCell(TreeCell<T> cell, double index);
-
-
-
-
-
-
-
-  @Override
-  protected void layoutChildren(double x, double y, double w, double h) {
-    System.out.println(">>> layoutChildren: " + x + ", " + y + ", w=" + w + ", h=" + h);
-//    markAllCellsUnused();
-//    getChildren().clear();
-
-    getSkinnable().setClip(new Rectangle(x, y, w, h));
-
-    doLayout(w, h);
-
-//    discardUnusedCells();
-  }
+  // index = fractional position on the carousel, not the model index
+  public abstract Shape applyEffectsToCellAndReturnClip(TreeCell<T> cell, double index);
 }

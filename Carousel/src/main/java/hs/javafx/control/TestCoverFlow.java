@@ -26,6 +26,41 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 
+/**
+ * Coverflow / Image Carousel demonstration
+ * ========================================
+ *
+ * This is work in progress and is still missing key features, like:
+ *
+ * - Scrollbar(s)
+ * - Page down/up navigation
+ * - Navigation orientation (up/down must be used currently instead of left/right)
+ * - Expansion of tree nodes
+ * - Better designed base classes (AbstractTreeViewSkin and AbstractCarouselSkin don't
+ *   really serve a well defined purpose at the moment apart from a bit of code
+ *   seperation).
+ *
+ * Notes
+ * -----
+ * The Carousel provides controls that affect only one aspect of the Carousel rendering at
+ * the same time so as to reduce surprises.  Still this can be somewhat counter intuitive.
+ * For example, the carousel restricts cells to a maximum width and height and will always
+ * try to draw cells of those sizes regardless of any other settings.
+ *
+ * This can be somewhat surprising when for example adjusting the view distance -- one
+ * would expect the cells to become smaller as the distance increases, however, it only
+ * adjusts how deep or squashed the carousel appears (tele lens effect).
+ *
+ * Assumptions
+ * -----------
+ * 1) Cells donot have an Effect set, this is set by the carousel (a PerspectiveTransform and
+ *    optionally a Reflection).
+ *
+ * 2) Cells are always rendered at their preferred width and height, the PerspectiveTransform
+ *    takes care of the scaling.  This means that Borders on very big cells will not be as
+ *    thick as the same Borders on a very small cell.  The Cell supplier should be aware of
+ *    this and adjust their cells preferred width/height accordingly if desired.
+ */
 public class TestCoverFlow extends Application {
 
   public static void main(String[] args) {
