@@ -253,26 +253,14 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
 
         layoutInArea(cell, w / 2, h / 2, cell.prefWidth(-1), cell.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);
 
-        if(cumulativeClip != null) {
-          Shape cellClip = Shape.intersect(cumulativeClip, new Rectangle(x, y, w, h));  // TODO there must be a better way to just copy a Shape...
-          Point2D localToParent = cell.localToParent(0, 0);
-
-          cellClip.getTransforms().add(new Translate(-localToParent.getX(), -localToParent.getY()));
-
-          cell.setClip(cellClip);
-        }
-        else {
-          cell.setClip(null);
-        }
+        cell.setClip(cumulativeClip);
 
         if(clip != null) {
-          clip.getTransforms().add(cell.getLocalToParentTransform());
-
           if(cumulativeClip == null) {
-            cumulativeClip = new Rectangle(x, y, w, h);
+            cumulativeClip = new Rectangle(x - w / 2, y - h / 2, w, h);
           }
 
-          cumulativeClip = Shape.subtract(cumulativeClip, clip);  // TODO a copy is made here...
+          cumulativeClip = Shape.subtract(cumulativeClip, clip);
         }
       }
     }
