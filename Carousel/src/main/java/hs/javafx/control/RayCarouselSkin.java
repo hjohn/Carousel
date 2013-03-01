@@ -100,10 +100,9 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   protected Point2D[] project(Point3D[] points) {
-    double viewDistance = getViewDistanceRatio() * getCarouselRadius();
-    double fov = (viewDistance - getCarouselRadius());
-
-    // Z = -1 when normalized
+    double carouselRadius = getCarouselRadius();
+    double viewDistance = getViewDistanceRatio() * carouselRadius;
+    double fov = viewDistance - carouselRadius;
 
     Point2D[] projectedPoints = new Point2D[points.length];
 
@@ -132,11 +131,11 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   protected Rectangle2D adjustCellRectangle(Rectangle2D cellRectangle) {
     double reflectionMaxHeight = 50;
 
-    double h = cellRectangle.getHeight();
-    double unusedHeight = getMaxCellHeight() - h;
+    double height = cellRectangle.getHeight();
+    double unusedHeight = getMaxCellHeight() - height;
 
     double horizonDistance = unusedHeight - unusedHeight * getCellAlignment();
-    double reflectionPortion = (reflectionMaxHeight - horizonDistance) / h;
+    double reflectionPortion = (reflectionMaxHeight - horizonDistance) / height;
 
     if(reflectionPortion < 0 || horizonDistance >= reflectionMaxHeight) {
       return cellRectangle;
@@ -150,7 +149,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
       cellRectangle.getMinX(),
       cellRectangle.getMinY(),
       cellRectangle.getWidth(),
-      cellRectangle.getHeight() + horizonDistance * 2 + h * reflectionPortion
+      cellRectangle.getHeight() + 2 * horizonDistance + height * reflectionPortion
     );
   }
 
@@ -198,7 +197,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
         return null;
       }
 
-      double reflectionY = cellHeight + horizonDistance * 2;
+      double reflectionY = cellHeight + 2 * horizonDistance;
       double fullHeight = reflectionY + cellHeight * reflectionPortion;
 
       double reflectionLY = perspectiveTransform.getUly() + (perspectiveTransform.getLly() - perspectiveTransform.getUly()) / fullHeight * reflectionY;
@@ -225,9 +224,9 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     double cellsToRotate = 2;
 
     if(index < cellsToRotate) {
-      double angle = index > -cellsToRotate ? Math.PI / 2 * -index / cellsToRotate + Math.PI / 2 : Math.PI;
+      double angle = index > -cellsToRotate ? 0.5 * Math.PI * -index / cellsToRotate + 0.5 * Math.PI : Math.PI;
 
-      Point3D axis = new Point3D((points[0].getX() + points[1].getX()) / 2, 0, (points[0].getZ() + points[1].getZ()) / 2);
+      Point3D axis = new Point3D((points[0].getX() + points[1].getX()) * 0.5, 0, (points[0].getZ() + points[1].getZ()) * 0.5);
 
       for(int i = 0; i < points.length; i++) {
         points[i] = rotateY(points[i], axis, angle);
@@ -236,14 +235,12 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   protected Point3D[] calculateCarouselCoordinates(Rectangle2D cellRectangle, double index) {
-    double angleOnCarousel = 2 * Math.PI * getCarouselViewFraction() / getInternalVisibleCellsCount() * index + Math.PI * 0.5;
-
-    double carouselRadius = getCarouselRadius();
+    double angleOnCarousel = 2 * Math.PI * getCarouselViewFraction() / getInternalVisibleCellsCount() * index + 0.5 * Math.PI;
 
     double cos = Math.cos(angleOnCarousel);
     double sin = -Math.sin(angleOnCarousel);
 
-    double l = carouselRadius - cellRectangle.getMinX();
+    double l = getCarouselRadius() - cellRectangle.getMinX();
     double r = l - cellRectangle.getWidth();
 
     double lx = l * cos;
