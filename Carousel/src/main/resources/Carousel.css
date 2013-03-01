@@ -4,7 +4,7 @@
 }
 
 .carousel {
-  -fx-background-color: linear-gradient(to bottom, black 0%, black 50%, grey 51%, black);
+  -fx-background-color: linear-gradient(to bottom, black 0%, black 50%, grey 50%, black);
 }
 
 .tree-cell {

@@ -103,11 +103,12 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     double carouselRadius = getCarouselRadius();
     double viewDistance = getViewDistanceRatio() * carouselRadius;
     double fov = viewDistance - carouselRadius;
+    double horizonY = getMaxCellHeight() * getViewAlignment() - 0.5 * getMaxCellHeight();
 
     Point2D[] projectedPoints = new Point2D[points.length];
 
     for(int i = 0; i < points.length; i++) {
-      projectedPoints[i] = project(points[i], viewDistance, fov);
+      projectedPoints[i] = project(points[i], viewDistance, fov, horizonY);
     }
 
     return projectedPoints;
@@ -122,7 +123,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
     return new Rectangle2D(
       -halfCellWidth,
-      -maxCellHeight * (1.0 - getViewAlignment()) + (maxCellHeight - cellHeight) * getCellAlignment(),
+      -maxCellHeight * getViewAlignment() + (maxCellHeight - cellHeight) * getCellAlignment(),
       2 * halfCellWidth,
       cellHeight
     );
@@ -153,8 +154,8 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     );
   }
 
-  private Point2D project(Point3D p, double viewDistance, double fov) {
-    return new Point2D(snapPosition(p.getX() * fov / (p.getZ() + viewDistance)), snapPosition(p.getY() * fov / (p.getZ() + viewDistance)));
+  private Point2D project(Point3D p, double viewDistance, double fov, double horizonY) {
+    return new Point2D(snapPosition(p.getX() * fov / (p.getZ() + viewDistance)), snapPosition(p.getY() * fov / (p.getZ() + viewDistance) + horizonY));
   }
 
   private static Point3D rotateY(Point3D p, Point3D axis, double radians) {

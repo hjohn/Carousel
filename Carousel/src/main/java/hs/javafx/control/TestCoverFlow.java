@@ -7,6 +7,8 @@ import java.util.List;
 
 import javafx.application.Application;
 import javafx.beans.property.DoubleProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
@@ -39,6 +41,7 @@ import javafx.util.Callback;
  * - Better designed base classes (AbstractTreeViewSkin and AbstractCarouselSkin don't
  *   really serve a well defined purpose at the moment apart from a bit of code
  *   seperation).
+ * - Customized reflections
  *
  * Notes
  * -----
@@ -48,15 +51,19 @@ import javafx.util.Callback;
  * try to draw cells of those sizes regardless of any other settings.
  *
  * This can be somewhat surprising when for example adjusting the view distance -- one
- * would expect the cells to become smaller as the distance increases, however, it only
- * adjusts how deep or squashed the carousel appears (tele lens effect).
+ * would expect the cells (and width of the carousel) to become smaller as the distance
+ * increases, however, it only adjusts how deep or squashed the carousel appears (a tele
+ * lens kind of effect).
  *
  * Assumptions
  * -----------
  * 1) Cells donot have an Effect set, this is set by the carousel (a PerspectiveTransform and
  *    optionally a Reflection).
  *
- * 2) Cells are always rendered at their preferred width and height, the PerspectiveTransform
+ * 2) Cells donot have a Clip set, this is set by the carousel when reflections need
+ *    clipping.
+ *
+ * 3) Cells are always rendered at their preferred width and height, the PerspectiveTransform
  *    takes care of the scaling.  This means that Borders on very big cells will not be as
  *    thick as the same Borders on a very small cell.  The Cell supplier should be aware of
  *    this and adjust their cells preferred width/height accordingly if desired.
@@ -88,7 +95,7 @@ public class TestCoverFlow extends Application {
 
     BorderPane borderPane = new BorderPane();
 
-    TreeView<ImageHandle> carousel = new TreeView<>();
+    final TreeView<ImageHandle> carousel = new TreeView<>();
 
     carousel.setMinWidth(500);
     carousel.setMinHeight(300);
@@ -141,7 +148,16 @@ public class TestCoverFlow extends Application {
     stage.setHeight(720);
     stage.show();
 
-    RayCarouselSkin<ImageHandle> skin = (RayCarouselSkin<ImageHandle>)carousel.getSkin();
+    final RayCarouselSkin<ImageHandle> skin = (RayCarouselSkin<ImageHandle>)carousel.getSkin();
+
+    skin.viewAlignmentProperty().addListener(new ChangeListener<Number>() {
+      @Override
+      public void changed(ObservableValue<? extends Number> observableValue, Number old, Number current) {
+        double f = skin.getMaxCellHeight() / carousel.getHeight();
+        double c = ((1.0 - f) / 2 + current.doubleValue() * f) * 100;
+        carousel.setStyle(String.format("-fx-background-color: linear-gradient(to bottom, black 0%%, black %6.2f%%, grey %6.2f%%, black)", c, c));
+      }
+    });
 
     fillOptionGridPane(skin);
 
