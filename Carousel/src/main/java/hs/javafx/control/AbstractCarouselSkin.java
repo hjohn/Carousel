@@ -40,6 +40,18 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   public final BooleanProperty clipReflectionsProperty() { return clipReflections; }
   public final boolean getClipReflections() { return clipReflections.get(); }
 
+  private final DoubleProperty density = new SimpleDoubleProperty(0.02);
+  public final DoubleProperty densityProperty() { return density; }
+  public final double getDensity() { return density.get(); }
+
+  private final DoubleProperty maxCellWidth = new SimpleDoubleProperty(300);
+  public final DoubleProperty maxCellWidthProperty() { return maxCellWidth; }
+  public final double getMaxCellWidth() { return maxCellWidth.get(); }
+
+  private final DoubleProperty maxCellHeight = new SimpleDoubleProperty(200);
+  public final DoubleProperty maxCellHeightProperty() { return maxCellHeight; }
+  public final double getMaxCellHeight() { return maxCellHeight.get(); }
+
   private final DoubleProperty radiusRatio = new SimpleDoubleProperty(1.0);
   public final DoubleProperty radiusRatioProperty() { return radiusRatio; }
   public final double getRadiusRatio() { return radiusRatio.get(); }
@@ -55,18 +67,6 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   private final DoubleProperty carouselViewFraction = new SimpleDoubleProperty(0.5);
   public final DoubleProperty carouselViewFractionProperty() { return carouselViewFraction; }
   public final double getCarouselViewFraction() { return carouselViewFraction.get(); }
-
-  private final DoubleProperty density = new SimpleDoubleProperty(0.02);
-  public final DoubleProperty densityProperty() { return density; }
-  public final double getDensity() { return density.get(); }
-
-  private final DoubleProperty maxCellWidth = new SimpleDoubleProperty(300);
-  public final DoubleProperty maxCellWidthProperty() { return maxCellWidth; }
-  public final double getMaxCellWidth() { return maxCellWidth.get(); }
-
-  private final DoubleProperty maxCellHeight = new SimpleDoubleProperty(200);
-  public final DoubleProperty maxCellHeightProperty() { return maxCellHeight; }
-  public final double getMaxCellHeight() { return maxCellHeight.get(); }
 
   private final Transition transition = new Transition() {
     {
@@ -261,6 +261,9 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
           }
 
           cumulativeClip = Shape.subtract(cumulativeClip, clip);
+        }
+        else if(cumulativeClip != null) {
+          cumulativeClip = Shape.union(cumulativeClip, cumulativeClip);  // Makes a copy as the same clip cannot be part of a scenegraph twice
         }
       }
     }
