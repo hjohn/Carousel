@@ -50,22 +50,6 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   public final DoubleProperty maxCellHeightProperty() { return maxCellHeight; }
   public final double getMaxCellHeight() { return maxCellHeight.get(); }
 
-  private final DoubleProperty radiusRatio = new SimpleDoubleProperty(1.0);
-  public final DoubleProperty radiusRatioProperty() { return radiusRatio; }
-  public final double getRadiusRatio() { return radiusRatio.get(); }
-
-  private final DoubleProperty viewDistanceRatio = new SimpleDoubleProperty(2.0);
-  public final DoubleProperty viewDistanceRatioProperty() { return viewDistanceRatio; }
-  public final double getViewDistanceRatio() { return viewDistanceRatio.get(); }
-
-  private final DoubleProperty viewAlignment = new SimpleDoubleProperty(0.5);
-  public final DoubleProperty viewAlignmentProperty() { return viewAlignment; }
-  public final double getViewAlignment() { return viewAlignment.get(); }
-
-  private final DoubleProperty carouselViewFraction = new SimpleDoubleProperty(0.5);
-  public final DoubleProperty carouselViewFractionProperty() { return carouselViewFraction; }
-  public final double getCarouselViewFraction() { return carouselViewFraction.get(); }
-
   private final Transition transition = new Transition() {
     {
       setCycleDuration(Duration.millis(500));
@@ -117,11 +101,15 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
     return internalVisibleCellsCount;
   }
 
+  protected double calculateCellCount() {
+    return getSkinnable().getWidth() * getDensity();
+  }
+
   private void allocateAndSortCells() {
     getCellPool().reset();
 
     List<TreeCell<T>> children = new ArrayList<>();
-    double cellCount = getSkinnable().getWidth() * getDensity();
+    double cellCount = calculateCellCount();
 
     internalVisibleCellsCount = cellCount < 3 ? 3 : cellCount;
 

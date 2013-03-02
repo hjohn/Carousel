@@ -14,6 +14,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.control.Skin;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -148,18 +149,22 @@ public class TestCoverFlow extends Application {
     stage.setHeight(720);
     stage.show();
 
-    final RayCarouselSkin<ImageHandle> skin = (RayCarouselSkin<ImageHandle>)carousel.getSkin();
+    Skin<?> genericSkin = carousel.getSkin();
 
-    skin.viewAlignmentProperty().addListener(new ChangeListener<Number>() {
-      @Override
-      public void changed(ObservableValue<? extends Number> observableValue, Number old, Number current) {
-        double f = skin.getMaxCellHeight() / carousel.getHeight();
-        double c = ((1.0 - f) / 2 + current.doubleValue() * f) * 100;
-        carousel.setStyle(String.format("-fx-background-color: linear-gradient(to bottom, black 0%%, black %6.2f%%, grey %6.2f%%, black)", c, c));
-      }
-    });
+    if(genericSkin instanceof RayCarouselSkin) {
+      final RayCarouselSkin<ImageHandle> skin = (RayCarouselSkin<ImageHandle>)genericSkin;
 
-    fillOptionGridPane(skin);
+      skin.viewAlignmentProperty().addListener(new ChangeListener<Number>() {
+        @Override
+        public void changed(ObservableValue<? extends Number> observableValue, Number old, Number current) {
+          double f = skin.getMaxCellHeight() / carousel.getHeight();
+          double c = ((1.0 - f) / 2 + current.doubleValue() * f) * 100;
+          carousel.setStyle(String.format("-fx-background-color: linear-gradient(to bottom, black 0%%, black %6.2f%%, grey %6.2f%%, black)", c, c));
+        }
+      });
+    }
+
+    fillOptionGridPane(genericSkin);
 
     optionGridPane.setPadding(new Insets(20.0));
 
@@ -181,27 +186,36 @@ public class TestCoverFlow extends Application {
 
   private GridPane optionGridPane = new GridPane();
 
-  public void fillOptionGridPane(final RayCarouselSkin<?> skin) {
-    addSlider(skin.cellAlignmentProperty(), "%4.2f", "Cell Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of cells which donot utilize all of the maximum available height");
-    addSlider(skin.radiusRatioProperty(), "%4.2f", "Radius Ratio (0.0 - 2.0)", 0.0, 2.0, 0.1, "The radius of the carousel expressed as the fraction of half the view's width");
-    addSlider(skin.viewDistanceRatioProperty(), "%4.2f", "View Distance Ratio (0.0 - 4.0)", 0.0, 4.0, 0.1, "The distance of the camera expressed as a fraction of the radius of the carousel");
-    addSlider(skin.densityProperty(), "%6.4f", "Cell Density (0.001 - 0.1)", 0.001, 0.1, 0.0025, "The density of cells in cells per pixel of view width");
-    addSlider(skin.maxCellWidthProperty(), "%4.0f", "Maximum Cell Width (1 - 2000)", 1, 1000, 5, "The maximum width a cell is allowed to become");
-    addSlider(skin.maxCellHeightProperty(), "%4.0f", "Maximum Cell Height (1 - 2000)", 1, 1000, 5, "The maximum height a cell is allowed to become");
-    addSlider(skin.carouselViewFractionProperty(), "%4.2f", "Carousel View Fraction (0.0 - 1.0)", 0.0, 1.0, 0.1, "The portion of the carousel that is used for displaying cells");
-    addSlider(skin.viewAlignmentProperty(), "%4.2f", "View Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of the camera with respect to the carousel");
+  public void fillOptionGridPane(final Skin<?> genericSkin) {
+    if(genericSkin instanceof LinearCarouselSkin) {
+      final LinearCarouselSkin<?> skin = (LinearCarouselSkin<?>) genericSkin;
 
-    optionGridPane.add(new HBox() {{
-      setSpacing(20);
-      getChildren().add(new CheckBox("Reflections?") {{
-        setStyle("-fx-font-size: 16px");
-        selectedProperty().bindBidirectional(skin.reflectionEnabledProperty());
-      }});
-      getChildren().add(new CheckBox("Clip Reflections?") {{
-        setStyle("-fx-font-size: 16px");
-        selectedProperty().bindBidirectional(skin.clipReflectionsProperty());
-      }});
-    }}, 2, row++);
+      addSlider(skin.cellAlignmentProperty(), "%4.2f", "Cell Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of cells which donot utilize all of the maximum available height");
+      addSlider(skin.densityProperty(), "%6.4f", "Cell Density (0.001 - 0.1)", 0.001, 0.1, 0.0025, "The density of cells in cells per pixel of view width");
+      addSlider(skin.maxCellWidthProperty(), "%4.0f", "Maximum Cell Width (1 - 2000)", 1, 1000, 5, "The maximum width a cell is allowed to become");
+      addSlider(skin.maxCellHeightProperty(), "%4.0f", "Maximum Cell Height (1 - 2000)", 1, 1000, 5, "The maximum height a cell is allowed to become");
+
+      optionGridPane.add(new HBox() {{
+        setSpacing(20);
+        getChildren().add(new CheckBox("Reflections?") {{
+          setStyle("-fx-font-size: 16px");
+          selectedProperty().bindBidirectional(skin.reflectionEnabledProperty());
+        }});
+        getChildren().add(new CheckBox("Clip Reflections?") {{
+          setStyle("-fx-font-size: 16px");
+          selectedProperty().bindBidirectional(skin.clipReflectionsProperty());
+        }});
+      }}, 2, row++);
+    }
+
+    if(genericSkin instanceof RayCarouselSkin) {
+      RayCarouselSkin<?> skin = (RayCarouselSkin<?>) genericSkin;
+
+      addSlider(skin.radiusRatioProperty(), "%4.2f", "Radius Ratio (0.0 - 2.0)", 0.0, 2.0, 0.1, "The radius of the carousel expressed as the fraction of half the view's width");
+      addSlider(skin.viewDistanceRatioProperty(), "%4.2f", "View Distance Ratio (0.0 - 4.0)", 0.0, 4.0, 0.1, "The distance of the camera expressed as a fraction of the radius of the carousel");
+      addSlider(skin.carouselViewFractionProperty(), "%4.2f", "Carousel View Fraction (0.0 - 1.0)", 0.0, 1.0, 0.1, "The portion of the carousel that is used for displaying cells");
+      addSlider(skin.viewAlignmentProperty(), "%4.2f", "View Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of the camera with respect to the carousel");
+    }
   }
 
   private int row = 1;
