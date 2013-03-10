@@ -1,5 +1,5 @@
 .tree-view {
-  -fx-skin: "hs.javafx.control.RayCarouselSkin";
+  -fx-skin: "hs.javafx.control.CarouselSkin";
   -fx-border-width: 0px;
 }
 

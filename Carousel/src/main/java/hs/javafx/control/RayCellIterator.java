@@ -1,50 +1,48 @@
 package hs.javafx.control;
 
-import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
-import javafx.scene.control.TreeView;
 import javafx.scene.effect.PerspectiveTransform;
 
-public class RayCarouselSkin<T> extends LinearCarouselSkin<T> {
-  private final DoubleProperty radiusRatio = new SimpleDoubleProperty(1.0);
-  public final DoubleProperty radiusRatioProperty() { return radiusRatio; }
-  public final double getRadiusRatio() { return radiusRatio.get(); }
+public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
+  private final RayLayout<T> layout;
+  private final int baseIndex;
+  private final int minimumIndex;
+  private final int maximumIndex;
+  private final double cellCount;
 
-  private final DoubleProperty viewDistanceRatio = new SimpleDoubleProperty(2.0);
-  public final DoubleProperty viewDistanceRatioProperty() { return viewDistanceRatio; }
-  public final double getViewDistanceRatio() { return viewDistanceRatio.get(); }
+  private int nextCount;
+  private int previousCount;
 
-  private final DoubleProperty viewAlignment = new SimpleDoubleProperty(0.5);
-  public final DoubleProperty viewAlignmentProperty() { return viewAlignment; }
-  @Override public final double getViewAlignment() { return viewAlignment.get(); }
+  public RayCellIterator(RayLayout<T> layout, double fractionalIndex) {
+    super(layout.getSkin(), fractionalIndex);
 
-  private final DoubleProperty carouselViewFraction = new SimpleDoubleProperty(0.5);
-  public final DoubleProperty carouselViewFractionProperty() { return carouselViewFraction; }
-  public final double getCarouselViewFraction() { return carouselViewFraction.get(); }
+    this.layout = layout;
 
-  public RayCarouselSkin(final TreeView<T> carousel) {
-    super(carousel);
+    int centerIndex = getSkin().getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
 
-    InvalidationListener invalidationListener = new InvalidationListener() {
-      @Override
-      public void invalidated(Observable observable) {
-        getSkinnable().requestLayout();
-      }
-    };
+    this.baseIndex = centerIndex == -1 ? 0 : centerIndex;
+    this.cellCount = calculateCellCount();
 
-    radiusRatioProperty().addListener(invalidationListener);
-    viewDistanceRatioProperty().addListener(invalidationListener);
-    viewAlignmentProperty().addListener(invalidationListener);
-    carouselViewFractionProperty().addListener(invalidationListener);
+    int preferredCellCount = (int)cellCount;
+
+    if(preferredCellCount % 2 == 0) {
+      preferredCellCount--;
+    }
+
+    this.minimumIndex = Math.max(0, centerIndex - (preferredCellCount - 1) / 2);
+    this.maximumIndex = Math.min(getSkin().getSkinnable().getExpandedItemCount() - 1, centerIndex + preferredCellCount / 2);
   }
 
   @Override
-  protected PerspectiveTransform createPerspectiveTransform(Rectangle2D cellRectangle, double index) {
+  protected double calculateCellOffset(Rectangle2D cellRectangle) {
+    return 0;
+  }
+
+  @Override
+  protected PerspectiveTransform createPerspectiveTransform(Rectangle2D cellRectangle, double offset) {
+    double index = getSkin().getSkinnable().getFocusModel().getFocusedIndex() - current().getIndex() - getFractionalIndex();
 
     /*
      * Calculate where the cell bounds are in 3D space based on its index position on the
@@ -77,11 +75,16 @@ public class RayCarouselSkin<T> extends LinearCarouselSkin<T> {
     );
   }
 
+  @Override
+  protected double getViewAlignment() {
+    return layout.getViewAlignment();
+  }
+
   protected Point2D[] project(Point3D[] points) {
     double carouselRadius = getCarouselRadius();
-    double viewDistance = getViewDistanceRatio() * carouselRadius;
+    double viewDistance = layout.getViewDistanceRatio() * carouselRadius;
     double fov = viewDistance - carouselRadius;
-    double horizonY = getMaxCellHeight() * getViewAlignment() - 0.5 * getMaxCellHeight();
+    double horizonY = getSkin().getMaxCellHeight() * getViewAlignment() - 0.5 * getSkin().getMaxCellHeight();
 
     Point2D[] projectedPoints = new Point2D[points.length];
 
@@ -92,8 +95,8 @@ public class RayCarouselSkin<T> extends LinearCarouselSkin<T> {
     return projectedPoints;
   }
 
-  private Point2D project(Point3D p, double viewDistance, double fov, double horizonY) {
-    return new Point2D(snapPosition(p.getX() * fov / (p.getZ() + viewDistance)), snapPosition(p.getY() * fov / (p.getZ() + viewDistance) + horizonY));
+  private static Point2D project(Point3D p, double viewDistance, double fov, double horizonY) {
+    return new Point2D(p.getX() * fov / (p.getZ() + viewDistance), p.getY() * fov / (p.getZ() + viewDistance) + horizonY);
   }
 
   private static Point3D rotateY(Point3D p, Point3D axis, double radians) {
@@ -127,7 +130,7 @@ public class RayCarouselSkin<T> extends LinearCarouselSkin<T> {
   }
 
   protected Point3D[] calculateCarouselCoordinates(Rectangle2D cellRectangle, double index) {
-    double angleOnCarousel = 2 * Math.PI * getCarouselViewFraction() / getInternalVisibleCellsCount() * index + 0.5 * Math.PI;
+    double angleOnCarousel = 2 * Math.PI * layout.getCarouselViewFraction() / calculateCellCount() * index + 0.5 * Math.PI;
 
     double cos = Math.cos(angleOnCarousel);
     double sin = -Math.sin(angleOnCarousel);
@@ -146,6 +149,34 @@ public class RayCarouselSkin<T> extends LinearCarouselSkin<T> {
   }
 
   protected double getCarouselRadius() {
-    return getSkinnable().getWidth() * getRadiusRatio();
+    return getSkin().getSkinnable().getWidth() * layout.getRadiusRatio();
+  }
+
+  protected double calculateCellCount() {
+    double count = getSkin().getSkinnable().getWidth() * getSkin().getDensity();
+
+    return count < 3 ? 3 : count;
+  }
+
+  private boolean hasMoreLeftCells() {
+    return baseIndex - previousCount - 1 >= minimumIndex;
+  }
+
+  private boolean hasMoreRightCells() {
+    return baseIndex + nextCount <= maximumIndex;
+  }
+
+  @Override
+  public boolean hasNext() {
+    return hasMoreLeftCells() || hasMoreRightCells();
+  }
+
+  @Override
+  protected int nextIndex() {
+    if((hasMoreLeftCells() && previousCount < nextCount) || !hasMoreRightCells()) {
+      return baseIndex - previousCount++ - 1;
+    }
+
+    return baseIndex + nextCount++;
   }
 }

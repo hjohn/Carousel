@@ -14,7 +14,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
-import javafx.scene.control.Skin;
 import javafx.scene.control.Slider;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -39,17 +38,46 @@ import javafx.util.Callback;
  * - Page down/up navigation
  * - Navigation orientation (up/down must be used currently instead of left/right)
  * - Expansion of tree nodes
- * - Better designed base classes (AbstractTreeViewSkin and AbstractCarouselSkin don't
- *   really serve a well defined purpose at the moment apart from a bit of code
- *   seperation).
- * - Customized reflections
+ * - Customizable reflections
+ * - Customizable animation
+ * - Customizable cell fading/scaling
+ *
+ * Implementation details
+ * ----------------------
+ * CarouselSkin delegates much of its functionality to Layouts.  A Layout determines
+ * how many cells are needed and where they get placed.  The reason for doing this
+ * is to provide a location for Properties that control the look of the Layout -- these
+ * are often very layout specific and thus are not part of CarouselSkin.  An alternative
+ * would have been to create a different Skin for each Layout, however, this makes it
+ * hard to switch between different carousel layouts.
+ *
+ * When layoutChildren() is called on the Skin, the Layout is asked to provide a
+ * CellIterator -- this Iterator provides a number of Cells that need to be positioned.
+ * The placement of cells can be dependent on earlier cells that have been positioned and
+ * the Iterator has state associated with it to keep track of this.  For example, when
+ * cells of different sizes should be positioned so they are touching each other, it is
+ * needed to know where previous cells were positioned.  Furthermore, the number of cells
+ * the iterator returns differs on implementation.  Some return a constant number of cells
+ * (when cells are equally spaced for example) or a fluctating number depending on the
+ * sizes of the cells involved.
+ *
+ * The CellIterator is a standard Iterator with one other method that queries the Clip of
+ * the last returned cell.  This is used to prevent cells positioned after the current
+ * cell to blend with portions of earlier positioned cells -- its main use currently is to
+ * avoid reflections from later positioned cells to show through the reflection of earlier
+ * positioned cells (which have a higher Z order).
+ *
+ * Without this clip, other cells (with lower Z order) can show through these transparent
+ * portions which can cause a blending of the individual reflections of each cell which is
+ * undesirable.  The use of clipping however is optional, as it is only needed when Cells
+ * are allowed to partially cover each other.
  *
  * Notes
  * -----
  * The Carousel provides controls that affect only one aspect of the Carousel rendering at
  * the same time so as to reduce surprises.  Still this can be somewhat counter intuitive.
  * For example, the carousel restricts cells to a maximum width and height and will always
- * try to draw cells of those sizes regardless of any other settings.
+ * try to draw cells at those sizes regardless of any other settings.
  *
  * This can be somewhat surprising when for example adjusting the view distance -- one
  * would expect the cells (and width of the carousel) to become smaller as the distance
@@ -58,16 +86,17 @@ import javafx.util.Callback;
  *
  * Assumptions
  * -----------
- * 1) Cells donot have an Effect set, this is set by the carousel (a PerspectiveTransform and
- *    optionally a Reflection).
+ * 1) Cells donot have an Effect set, this is set by the carousel (a PerspectiveTransform
+ *    and optionally a Reflection).
  *
  * 2) Cells donot have a Clip set, this is set by the carousel when reflections need
  *    clipping.
  *
- * 3) Cells are always rendered at their preferred width and height, the PerspectiveTransform
- *    takes care of the scaling.  This means that Borders on very big cells will not be as
- *    thick as the same Borders on a very small cell.  The Cell supplier should be aware of
- *    this and adjust their cells preferred width/height accordingly if desired.
+ * 3) Cells are always rendered at their preferred width and height, the
+ *    PerspectiveTransform takes care of the scaling.  This means that Borders on very big
+ *    cells will not be as thick as the same Borders on a very small cell.  The Cell
+ *    supplier should be aware of this and adjust their cells preferred width/height
+ *    accordingly if desired.
  */
 public class TestCoverFlow extends Application {
 
@@ -149,22 +178,23 @@ public class TestCoverFlow extends Application {
     stage.setHeight(720);
     stage.show();
 
-    Skin<?> genericSkin = carousel.getSkin();
+    final CarouselSkin<?> carouselSkin = (CarouselSkin<?>)carousel.getSkin();
+    Layout<?> genericLayout = carouselSkin.getLayout();
 
-    if(genericSkin instanceof RayCarouselSkin) {
-      final RayCarouselSkin<ImageHandle> skin = (RayCarouselSkin<ImageHandle>)genericSkin;
+    if(genericLayout instanceof RayLayout) {
+      final RayLayout<?> layout = (RayLayout<?>)genericLayout;
 
-      skin.viewAlignmentProperty().addListener(new ChangeListener<Number>() {
+      layout.viewAlignmentProperty().addListener(new ChangeListener<Number>() {
         @Override
         public void changed(ObservableValue<? extends Number> observableValue, Number old, Number current) {
-          double f = skin.getMaxCellHeight() / carousel.getHeight();
+          double f = carouselSkin.getMaxCellHeight() / carousel.getHeight();
           double c = ((1.0 - f) / 2 + current.doubleValue() * f) * 100;
           carousel.setStyle(String.format("-fx-background-color: linear-gradient(to bottom, black 0%%, black %6.2f%%, grey %6.2f%%, black)", c, c));
         }
       });
     }
 
-    fillOptionGridPane(genericSkin);
+    fillOptionGridPane(carouselSkin, genericLayout);
 
     optionGridPane.setPadding(new Insets(20.0));
 
@@ -186,35 +216,31 @@ public class TestCoverFlow extends Application {
 
   private GridPane optionGridPane = new GridPane();
 
-  public void fillOptionGridPane(final Skin<?> genericSkin) {
-    if(genericSkin instanceof LinearCarouselSkin) {
-      final LinearCarouselSkin<?> skin = (LinearCarouselSkin<?>) genericSkin;
+  public void fillOptionGridPane(final CarouselSkin<?> skin, Layout<?> genericLayout) {
+    addSlider(skin.cellAlignmentProperty(), "%4.2f", "Cell Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of cells which donot utilize all of the maximum available height");
+    addSlider(skin.densityProperty(), "%6.4f", "Cell Density (0.001 - 0.1)", 0.001, 0.1, 0.0025, "The density of cells in cells per pixel of view width");
+    addSlider(skin.maxCellWidthProperty(), "%4.0f", "Maximum Cell Width (1 - 2000)", 1, 1000, 5, "The maximum width a cell is allowed to become");
+    addSlider(skin.maxCellHeightProperty(), "%4.0f", "Maximum Cell Height (1 - 2000)", 1, 1000, 5, "The maximum height a cell is allowed to become");
 
-      addSlider(skin.cellAlignmentProperty(), "%4.2f", "Cell Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of cells which donot utilize all of the maximum available height");
-      addSlider(skin.densityProperty(), "%6.4f", "Cell Density (0.001 - 0.1)", 0.001, 0.1, 0.0025, "The density of cells in cells per pixel of view width");
-      addSlider(skin.maxCellWidthProperty(), "%4.0f", "Maximum Cell Width (1 - 2000)", 1, 1000, 5, "The maximum width a cell is allowed to become");
-      addSlider(skin.maxCellHeightProperty(), "%4.0f", "Maximum Cell Height (1 - 2000)", 1, 1000, 5, "The maximum height a cell is allowed to become");
+    optionGridPane.add(new HBox() {{
+      setSpacing(20);
+      getChildren().add(new CheckBox("Reflections?") {{
+        setStyle("-fx-font-size: 16px");
+        selectedProperty().bindBidirectional(skin.reflectionEnabledProperty());
+      }});
+      getChildren().add(new CheckBox("Clip Reflections?") {{
+        setStyle("-fx-font-size: 16px");
+        selectedProperty().bindBidirectional(skin.clipReflectionsProperty());
+      }});
+    }}, 2, row++);
 
-      optionGridPane.add(new HBox() {{
-        setSpacing(20);
-        getChildren().add(new CheckBox("Reflections?") {{
-          setStyle("-fx-font-size: 16px");
-          selectedProperty().bindBidirectional(skin.reflectionEnabledProperty());
-        }});
-        getChildren().add(new CheckBox("Clip Reflections?") {{
-          setStyle("-fx-font-size: 16px");
-          selectedProperty().bindBidirectional(skin.clipReflectionsProperty());
-        }});
-      }}, 2, row++);
-    }
+    if(genericLayout instanceof RayLayout) {
+      RayLayout<?> layout = (RayLayout<?>) genericLayout;
 
-    if(genericSkin instanceof RayCarouselSkin) {
-      RayCarouselSkin<?> skin = (RayCarouselSkin<?>) genericSkin;
-
-      addSlider(skin.radiusRatioProperty(), "%4.2f", "Radius Ratio (0.0 - 2.0)", 0.0, 2.0, 0.1, "The radius of the carousel expressed as the fraction of half the view's width");
-      addSlider(skin.viewDistanceRatioProperty(), "%4.2f", "View Distance Ratio (0.0 - 4.0)", 0.0, 4.0, 0.1, "The distance of the camera expressed as a fraction of the radius of the carousel");
-      addSlider(skin.carouselViewFractionProperty(), "%4.2f", "Carousel View Fraction (0.0 - 1.0)", 0.0, 1.0, 0.1, "The portion of the carousel that is used for displaying cells");
-      addSlider(skin.viewAlignmentProperty(), "%4.2f", "View Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of the camera with respect to the carousel");
+      addSlider(layout.radiusRatioProperty(), "%4.2f", "Radius Ratio (0.0 - 2.0)", 0.0, 2.0, 0.1, "The radius of the carousel expressed as the fraction of half the view's width");
+      addSlider(layout.viewDistanceRatioProperty(), "%4.2f", "View Distance Ratio (0.0 - 4.0)", 0.0, 4.0, 0.1, "The distance of the camera expressed as a fraction of the radius of the carousel");
+      addSlider(layout.carouselViewFractionProperty(), "%4.2f", "Carousel View Fraction (0.0 - 1.0)", 0.0, 1.0, 0.1, "The portion of the carousel that is used for displaying cells");
+      addSlider(layout.viewAlignmentProperty(), "%4.2f", "View Alignment (0.0 - 1.0)", 0.0, 1.0, 0.1, "The vertical alignment of the camera with respect to the carousel");
     }
   }
 
