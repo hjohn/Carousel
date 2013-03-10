@@ -55,10 +55,10 @@ import javafx.util.Callback;
  * CellIterator -- this Iterator provides a number of Cells that need to be positioned.
  * The placement of cells can be dependent on earlier cells that have been positioned and
  * the Iterator has state associated with it to keep track of this.  For example, when
- * cells of different sizes should be positioned so they are touching each other, it is
- * needed to know where previous cells were positioned.  Furthermore, the number of cells
- * the iterator returns differs on implementation.  Some return a constant number of cells
- * (when cells are equally spaced for example) or a fluctating number depending on the
+ * cells of different sizes should be positioned so they are touching each other, there is
+ * need to know where previous cells were positioned.  Furthermore, the number of cells
+ * the iterator returns differs by implementation.  Some return a constant number of cells
+ * (when cells are equally spaced for example) or a fluctuating number depending on the
  * sizes of the cells involved.
  *
  * The CellIterator is a standard Iterator with one other method that queries the Clip of
