@@ -31,26 +31,26 @@ import javafx.util.Callback;
  * - Expansion of tree nodes
  * - Customizable reflections
  * - Customizable animation
- * - Customizable cell fading/scaling
  *
  * Implementation details
  * ----------------------
  * CarouselSkin delegates much of its functionality to Layouts.  A Layout determines
- * how many cells are needed and where they get placed.  The reason for doing this
- * is to provide a location for Properties that control the look of the Layout -- these
- * are often very layout specific and thus are not part of CarouselSkin.  An alternative
- * would have been to create a different Skin for each Layout, however, this makes it
- * hard to switch between different carousel layouts.
+ * how many cells are needed and where they get placed.  This provides a location for
+ * Properties and customization Methods that control the look of the Layout -- these
+ * are often very specific and thus are not part of CarouselSkin.
  *
  * When layoutChildren() is called on the Skin, the Layout is asked to provide a
  * CellIterator -- this Iterator provides a number of Cells that need to be positioned.
  * The placement of cells can be dependent on earlier cells that have been positioned and
  * the Iterator has state associated with it to keep track of this.  For example, when
  * cells of different sizes should be positioned so they are touching each other, there is
- * need to know where previous cells were positioned.  Furthermore, the number of cells
+ * a need to know where previous cells were positioned.  Furthermore, the number of cells
  * the iterator returns differs by implementation.  Some return a constant number of cells
- * (when cells are equally spaced for example) or a fluctuating number depending on the
- * sizes of the cells involved.
+ * (when cells are equally spaced for example) or a number dependent on the sizes of the
+ * cells involved.
+ *
+ * Some layouts currently also provide ways to override certain behaviour by subclassing
+ * them, specifically RayLayout.  This is work in progress.
  *
  * The CellIterator is a standard Iterator with one other method that queries the Clip of
  * the last returned cell.  This is used to prevent cells positioned after the current
@@ -65,29 +65,31 @@ import javafx.util.Callback;
  *
  * Notes
  * -----
- * The Carousel provides controls that affect only one aspect of the Carousel rendering at
- * the same time so as to reduce surprises.  Still this can be somewhat counter intuitive.
- * For example, the carousel restricts cells to a maximum width and height and will always
- * try to draw cells at those sizes regardless of any other settings.
+ * The Carousel and its Layouts provide properties that affect only one aspect of the
+ * Carousel rendering at the same time so as to reduce surprises.  Still this can be
+ * somewhat counter intuitive.  For example, the carousel restricts cells to a maximum
+ * width and height and will always try to draw cells at those sizes regardless of any
+ * other settings.
  *
  * This can be somewhat surprising when for example adjusting the view distance -- one
  * would expect the cells (and width of the carousel) to become smaller as the distance
  * increases, however, it only adjusts how deep or squashed the carousel appears (a tele
  * lens kind of effect).
  *
- * Assumptions
- * -----------
- * 1) Cells donot have an Effect set, this is set by the carousel (a PerspectiveTransform
- *    and optionally a Reflection).
+ * Assumptions on Cells provided by Cell Factories
+ * -----------------------------------------------
+ * Depending on the Layout chosen, certain properties of cells will get overwritten.
  *
- * 2) Cells donot have a Clip set, this is set by the carousel when reflections need
- *    clipping.
+ * These can include:
+ * - Effect property; used to do scaling and reflections
+ * - Clip property; used to clip reflections
+ * - Opacity property; used for fade in/out
  *
- * 3) Cells are always rendered at their preferred width and height, the
- *    PerspectiveTransform takes care of the scaling.  This means that Borders on very big
- *    cells will not be as thick as the same Borders on a very small cell.  The Cell
- *    supplier should be aware of this and adjust their cells preferred width/height
- *    accordingly if desired.
+ * Furthermore, Cells are always rendered at their preferred width and height, the
+ * PerspectiveTransform takes care of the scaling.  This means that Borders on very big
+ * cells will not be as thick as the same Borders on a very small cell.  The Cell
+ * supplier should be aware of this and adjust their cells preferred width/height
+ * accordingly if desired.
  */
 public class TestCoverFlow extends Application {
 
