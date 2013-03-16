@@ -1,20 +1,19 @@
 package hs.javafx.control;
 
-public class LinearLayout<T> implements Layout<T> {
-  private final CarouselSkin<T> skin;
+public class LinearLayout implements Layout {
+  private final CarouselSkin<?> skin;
 
-  public LinearLayout(CarouselSkin<T> skin) {
+  public LinearLayout(CarouselSkin<?> skin) {
     this.skin = skin;
   }
 
   @Override
-  public CarouselSkin<T> getSkin() {
+  public CarouselSkin<?> getSkin() {
     return skin;
   }
 
   @Override
-  public CellIterator<T> renderCellIterator(double fractionalIndex) {
-    return new LinearCellIterator<>(this, fractionalIndex, false);
+  public CellIterator renderCellIterator(double fractionalIndex) {
+    return new LinearCellIterator(this, fractionalIndex, false);
   }
-
 }

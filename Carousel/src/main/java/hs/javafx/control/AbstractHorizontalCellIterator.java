@@ -7,9 +7,9 @@ import javafx.scene.effect.Reflection;
 import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Shape;
 
-public abstract class AbstractHorizontalCellIterator<T> extends AbstractCellIterator<T> {
+public abstract class AbstractHorizontalCellIterator extends AbstractCellIterator {
 
-  public AbstractHorizontalCellIterator(CarouselSkin<T> skin, double fractionalIndex) {
+  public AbstractHorizontalCellIterator(CarouselSkin<?> skin, double fractionalIndex) {
     super(skin, fractionalIndex);
   }
 

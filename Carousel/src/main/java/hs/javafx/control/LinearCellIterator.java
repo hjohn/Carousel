@@ -4,8 +4,8 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.control.TreeView;
 import javafx.scene.effect.PerspectiveTransform;
 
-public class LinearCellIterator<T> extends AbstractHorizontalCellIterator<T> {
-  private final TreeView<T> treeView;
+public class LinearCellIterator extends AbstractHorizontalCellIterator {
+  private final TreeView<?> treeView;
 
   private int nextCount;
   private int previousCount;
@@ -21,7 +21,7 @@ public class LinearCellIterator<T> extends AbstractHorizontalCellIterator<T> {
   private final int maximumIndex;
   private final int cellCount;
 
-  public LinearCellIterator(LinearLayout<T> layout, double fractionalIndex, boolean spaced) {
+  public LinearCellIterator(LinearLayout layout, double fractionalIndex, boolean spaced) {
     super(layout.getSkin(), fractionalIndex);
 
     this.spaced = spaced;
@@ -91,6 +91,7 @@ public class LinearCellIterator<T> extends AbstractHorizontalCellIterator<T> {
   // TODO Only cell rectangle gets manipulated by offset, why not manipulate cell rectangle directly then?
   // TODO Check calculate cell count...
   // TODO FractionalIndex... provide with CellRuns or make available on Skin?
+  // TODO Carousel loop to 0
 
   @Override
   protected double calculateCellOffset(Rectangle2D cellRectangle) {

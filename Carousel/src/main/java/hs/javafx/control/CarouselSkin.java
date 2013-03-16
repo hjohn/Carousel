@@ -51,10 +51,10 @@ public class CarouselSkin<T> extends AbstractTreeViewSkin<T> {
   public final DoubleProperty maxCellHeightProperty() { return maxCellHeight; }
   public final double getMaxCellHeight() { return maxCellHeight.get(); }
 
-  private final ObjectProperty<Layout<T>> layout = new SimpleObjectProperty<Layout<T>>(new RayLayout<>(this));
-  public ObjectProperty<Layout<T>> layoutProperty() { return layout; }
-  public Layout<T> getLayout() { return layout.get(); }
-  public void setLayout(Layout<T> layout) { this.layout.set(layout); }
+  private final ObjectProperty<Layout> layout = new SimpleObjectProperty<Layout>(new RayLayout(this));
+  public ObjectProperty<Layout> layoutProperty() { return layout; }
+  public Layout getLayout() { return layout.get(); }
+  public void setLayout(Layout layout) { this.layout.set(layout); }
 
   private Transition transition = new Transition() {
     {
@@ -86,6 +86,7 @@ public class CarouselSkin<T> extends AbstractTreeViewSkin<T> {
 
     carousel.widthProperty().addListener(invalidationListener);
     densityProperty().addListener(invalidationListener);
+    layoutProperty().addListener(invalidationListener);
 
     cellAlignmentProperty().addListener(invalidationListener);
     reflectionEnabledProperty().addListener(invalidationListener);
@@ -161,10 +162,10 @@ public class CarouselSkin<T> extends AbstractTreeViewSkin<T> {
      * blend with each other as they are partially transparent in nature.
      */
 
-    CellIterator<T> iterator = getLayout().renderCellIterator(fractionalIndex);
+    CellIterator iterator = getLayout().renderCellIterator(fractionalIndex);
 
     while(iterator.hasNext()) {
-      TreeCell<T> cell = iterator.next();
+      TreeCell<?> cell = iterator.next();
       Shape clip = iterator.getClip();
 
       layoutInArea(cell, w / 2, h / 2, cell.prefWidth(-1), cell.prefHeight(-1), 0, HPos.CENTER, VPos.CENTER);

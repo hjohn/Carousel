@@ -7,14 +7,14 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.effect.PerspectiveTransform;
 import javafx.scene.shape.Shape;
 
-public abstract class AbstractCellIterator<T> implements CellIterator<T> {
-  private final CarouselSkin<T> skin;
+public abstract class AbstractCellIterator implements CellIterator {
+  private final CarouselSkin<?> skin;
   private final double fractionalIndex;
 
-  private TreeCell<T> currentCell;
+  private TreeCell<?> currentCell;
   private Shape currentClip;
 
-  public AbstractCellIterator(CarouselSkin<T> skin, double fractionalIndex) {
+  public AbstractCellIterator(CarouselSkin<?> skin, double fractionalIndex) {
     this.skin = skin;
     this.fractionalIndex = fractionalIndex;
   }
@@ -26,7 +26,7 @@ public abstract class AbstractCellIterator<T> implements CellIterator<T> {
   protected abstract Rectangle2D adjustCellRectangle(Rectangle2D cellRectangle);
   protected abstract Shape adjustTransform(PerspectiveTransform perspectiveTransform);
 
-  protected CarouselSkin<T> getSkin() {
+  protected CarouselSkin<?> getSkin() {
     return skin;
   }
 
@@ -34,7 +34,7 @@ public abstract class AbstractCellIterator<T> implements CellIterator<T> {
     return fractionalIndex;
   }
 
-  public TreeCell<T> current() {
+  public TreeCell<?> current() {
     return currentCell;
   }
 
@@ -44,7 +44,7 @@ public abstract class AbstractCellIterator<T> implements CellIterator<T> {
   }
 
   @Override
-  public TreeCell<T> next() {
+  public TreeCell<?> next() {
     if(!hasNext()) {
       throw new NoSuchElementException();
     }

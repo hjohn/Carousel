@@ -10,6 +10,7 @@ import javafx.beans.property.IntegerProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.css.CssMetaData;
+import javafx.css.Styleable;
 import javafx.css.StyleableIntegerProperty;
 import javafx.event.EventHandler;
 import javafx.scene.Node;
@@ -157,7 +158,7 @@ public class MultiColumnTreeViewSkin<T> extends AbstractTreeViewSkin<T> {
       }
     });
 
-    getSkinnable().addEventHandler(ScrollToEvent.SCROLL_TO_TOP_INDEX, new EventHandler<ScrollToEvent<Integer>>() {
+    getSkinnable().addEventHandler(ScrollToEvent.scrollToTopIndex(), new EventHandler<ScrollToEvent<Integer>>() {
       @Override
       public void handle(ScrollToEvent<Integer> event) {
         targetCellOffset = 0.5;
@@ -320,10 +321,10 @@ public class MultiColumnTreeViewSkin<T> extends AbstractTreeViewSkin<T> {
         }
       };
 
-    private static final List<CssMetaData<? extends Node, ?>> STYLEABLES;
+    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
 
     static {
-      final List<CssMetaData<? extends Node, ?>> styleables = new ArrayList<>(SkinBase.getClassCssMetaData());
+      final List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(SkinBase.getClassCssMetaData());
 
       Collections.addAll(styleables,
         COLUMNS
@@ -337,7 +338,7 @@ public class MultiColumnTreeViewSkin<T> extends AbstractTreeViewSkin<T> {
    * @return The CssMetaData associated with this class, which may include the
    * CssMetaData of its super classes.
    */
-  public static List<CssMetaData<? extends Node, ?>> getClassCssMetaData() {
+  public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
       return StyleableProperties.STYLEABLES;
   }
 
@@ -345,7 +346,7 @@ public class MultiColumnTreeViewSkin<T> extends AbstractTreeViewSkin<T> {
    * {@inheritDoc}
    */
   @Override
-  public List<CssMetaData<? extends Node, ?>> getCssMetaData() {
+  public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
       return getClassCssMetaData();
   }
 }

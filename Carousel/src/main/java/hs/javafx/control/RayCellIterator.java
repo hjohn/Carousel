@@ -5,17 +5,20 @@ import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.effect.PerspectiveTransform;
 
-public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
-  private final RayLayout<T> layout;
+public class RayCellIterator extends AbstractHorizontalCellIterator {
+  private final RayLayout layout;
   private final int baseIndex;
   private final int minimumIndex;
   private final int maximumIndex;
-  private final double cellCount;
+  private final int cellCount;
+
+  private Point3D[] points;
+  private double currentCellDistanceToCenter;
 
   private int nextCount;
   private int previousCount;
 
-  public RayCellIterator(RayLayout<T> layout, double fractionalIndex) {
+  public RayCellIterator(RayLayout layout, double fractionalIndex) {
     super(layout.getSkin(), fractionalIndex);
 
     this.layout = layout;
@@ -23,16 +26,24 @@ public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
     int centerIndex = getSkin().getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
 
     this.baseIndex = centerIndex == -1 ? 0 : centerIndex;
-    this.cellCount = calculateCellCount();
 
-    int preferredCellCount = (int)cellCount;
+    int count = (int)calculateCellCount();
 
-    if(preferredCellCount % 2 == 0) {
-      preferredCellCount--;
-    }
+    this.cellCount = count % 2 == 0 ? count - 1 : count;  // always uneven
+    this.minimumIndex = Math.max(0, centerIndex - cellCount / 2);
+    this.maximumIndex = Math.min(getSkin().getSkinnable().getExpandedItemCount() - 1, centerIndex + cellCount / 2);
+  }
 
-    this.minimumIndex = Math.max(0, centerIndex - (preferredCellCount - 1) / 2);
-    this.maximumIndex = Math.min(getSkin().getSkinnable().getExpandedItemCount() - 1, centerIndex + preferredCellCount / 2);
+  public int getCellCount() {
+    return cellCount;
+  }
+
+  public Point3D[] currentPoints() {
+    return points;
+  }
+
+  public double currentCellDistanceToCenter() {
+    return currentCellDistanceToCenter;
   }
 
   @Override
@@ -42,20 +53,20 @@ public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
 
   @Override
   protected PerspectiveTransform createPerspectiveTransform(Rectangle2D cellRectangle, double offset) {
-    double index = getSkin().getSkinnable().getFocusModel().getFocusedIndex() - current().getIndex() - getFractionalIndex();
+    this.currentCellDistanceToCenter = getSkin().getSkinnable().getFocusModel().getFocusedIndex() - current().getIndex() - getFractionalIndex();
 
     /*
      * Calculate where the cell bounds are in 3D space based on its index position on the
      * carousel.
      */
 
-    Point3D[] points = calculateCarouselCoordinates(cellRectangle, index);
+    this.points = calculateCarouselCoordinates(cellRectangle, currentCellDistanceToCenter);
 
     /*
      * Apply additional transformations to the cell's 3D coordinates based on its index.
      */
 
-    applyViewRotation(points, index);
+    layout.customizeCell(this);
 
     /*
      * Project the final position to 2D space.
@@ -70,8 +81,8 @@ public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
     return new PerspectiveTransform(
       projectedPoints[0].getX(), projectedPoints[0].getY(),
       projectedPoints[1].getX(), projectedPoints[1].getY(),
-      projectedPoints[3].getX(), projectedPoints[3].getY(),
-      projectedPoints[2].getX(), projectedPoints[2].getY()
+      projectedPoints[2].getX(), projectedPoints[2].getY(),
+      projectedPoints[3].getX(), projectedPoints[3].getY()
     );
   }
 
@@ -99,36 +110,6 @@ public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
     return new Point2D(p.getX() * fov / (p.getZ() + viewDistance), p.getY() * fov / (p.getZ() + viewDistance) + horizonY);
   }
 
-  private static Point3D rotateY(Point3D p, Point3D axis, double radians) {
-    Point3D input = new Point3D(p.getX() - axis.getX(), p.getY() - axis.getY(), p.getZ() - axis.getZ());
-
-    return new Point3D(
-      input.getZ() * Math.sin(radians) + input.getX() * Math.cos(radians) + axis.getX(),
-      input.getY() + axis.getY(),
-      input.getZ() * Math.cos(radians) - input.getX() * Math.sin(radians) + axis.getZ()
-    );
-  }
-
-  /**
-   * Rotates the Cell towards the Viewer when it is close to the center.  Also mirrors
-   * the cells after they passed the center to keep the Cells correctly visible for the
-   * viewer.
-   */
-  @SuppressWarnings("static-method")
-  protected void applyViewRotation(Point3D[] points, double index) {
-    double cellsToRotate = 2;
-
-    if(index < cellsToRotate) {
-      double angle = index > -cellsToRotate ? 0.5 * Math.PI * -index / cellsToRotate + 0.5 * Math.PI : Math.PI;
-
-      Point3D axis = new Point3D((points[0].getX() + points[1].getX()) * 0.5, 0, (points[0].getZ() + points[1].getZ()) * 0.5);
-
-      for(int i = 0; i < points.length; i++) {
-        points[i] = rotateY(points[i], axis, angle);
-      }
-    }
-  }
-
   protected Point3D[] calculateCarouselCoordinates(Rectangle2D cellRectangle, double index) {
     double angleOnCarousel = 2 * Math.PI * layout.getCarouselViewFraction() / calculateCellCount() * index + 0.5 * Math.PI;
 
@@ -145,7 +126,7 @@ public class RayCellIterator<T> extends AbstractHorizontalCellIterator<T> {
     double lz = l * sin;
     double rz = r * sin;
 
-    return new Point3D[] {new Point3D(lx, ty, lz), new Point3D(rx, ty, rz), new Point3D(lx, by, lz), new Point3D(rx, by, rz)};
+    return new Point3D[] {new Point3D(lx, ty, lz), new Point3D(rx, ty, rz), new Point3D(rx, by, rz), new Point3D(lx, by, lz)};
   }
 
   protected double getCarouselRadius() {
