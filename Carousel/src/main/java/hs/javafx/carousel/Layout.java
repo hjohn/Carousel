@@ -1,4 +1,4 @@
-package hs.javafx.control;
+package hs.javafx.carousel;
 
 public interface Layout {
   CellIterator renderCellIterator(double fractionalIndex);

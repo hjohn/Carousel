@@ -1,4 +1,4 @@
-package hs.javafx.control;
+package hs.javafx.carousel;
 
 public class LinearLayout implements Layout {
   private final CarouselSkin<?> skin;

@@ -1,5 +1,5 @@
 .tree-view {
-  -fx-skin: "hs.javafx.control.CarouselSkin";
+  -fx-skin: "hs.javafx.carousel.CarouselSkin";
   -fx-border-width: 0px;
 }
 
@@ -15,5 +15,5 @@
 /* Necessary to get rid of indent/padding/spacing caused by disclosure node */
 
 .tree-cell {
-  -fx-skin: "hs.javafx.control.TreeCellSkin";
+  -fx-skin: "hs.javafx.carousel.TreeCellSkin";
 }

@@ -1,5 +1,10 @@
-package hs.javafx.control;
+package hs.javafx.demo;
 
+import hs.javafx.carousel.CarouselSkin;
+import hs.javafx.carousel.Layout;
+import hs.javafx.carousel.LinearLayout;
+import hs.javafx.carousel.RayCellIterator;
+import hs.javafx.carousel.RayLayout;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;

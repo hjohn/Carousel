@@ -1,4 +1,4 @@
-package hs.javafx.control;
+package hs.javafx.carousel;
 
 import javafx.scene.control.IndexedCell;
 

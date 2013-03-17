@@ -1,4 +1,4 @@
-package hs.javafx.control;
+package hs.javafx.carousel;
 
 import javafx.geometry.Dimension2D;
 import javafx.geometry.Rectangle2D;

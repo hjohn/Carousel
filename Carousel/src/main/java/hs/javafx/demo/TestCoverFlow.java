@@ -1,4 +1,6 @@
-package hs.javafx.control;
+package hs.javafx.demo;
+
+import hs.javafx.carousel.CarouselSkin;
 
 import java.io.File;
 import java.io.FileInputStream;
