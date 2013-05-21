@@ -15,13 +15,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>javafx</groupId>
-			<artifactId>javafx</artifactId>
-			<scope>system</scope>
-			<systemPath>C:\Program Files (x86)\Java\jdk1.7.0_10\jre\lib\jfxrt.jar</systemPath>
-			<version>2.2</version>
-		</dependency>
-		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-all</artifactId>
 			<version>1.9.0</version>
@@ -32,6 +25,15 @@
 	</properties>
 	<build>
 		<plugins>
+            <plugin>
+                <groupId>com.zenjava</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>1.5</version>
+                <configuration>
+                    <mainClass>hs.javafx.control.TestCoverflow</mainClass>
+                    <vendor>hjohn</vendor>
+                </configuration>
+            </plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
