@@ -123,7 +123,7 @@ public class Carousel<T> extends Control {
 
   @Override
   protected String getUserAgentStylesheet() {
-    return getClass().getResource("Carousel.css").toExternalForm();
+    return "css/Carousel.css";
   }
 
   static class CarouselFocusModel<T> extends FocusModel<T> {
