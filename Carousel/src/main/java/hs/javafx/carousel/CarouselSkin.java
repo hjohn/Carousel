@@ -56,7 +56,7 @@ public class CarouselSkin<T> extends AbstractTreeViewSkin<T> {
   public Layout getLayout() { return layout.get(); }
   public void setLayout(Layout layout) { this.layout.set(layout); }
 
-  private Transition transition = new Transition() {
+  private final Transition transition = new Transition() {
     {
       setCycleDuration(Duration.millis(500));
       setInterpolator(Interpolator.LINEAR);  // frequently restarted animations work very poorly with non-linear Interpolators
@@ -125,25 +125,26 @@ public class CarouselSkin<T> extends AbstractTreeViewSkin<T> {
     }
   };
 
-  @Override
-  protected double computeMinWidth(double height) {
-    return 16;
-  }
-
-  @Override
-  protected double computeMinHeight(double width) {
-    return 16;
-  }
-
-  @Override
-  protected double computePrefWidth(double height) {
-    return 16;
-  }
-
-  @Override
-  protected double computePrefHeight(double width) {
-    return 16;
-  }
+// TODO removed 2/10/2013
+//  @Override
+//  protected double computeMinWidth(double height) {
+//    return 16;
+//  }
+//
+//  @Override
+//  protected double computeMinHeight(double width) {
+//    return 16;
+//  }
+//
+//  @Override
+//  protected double computePrefWidth(double height) {
+//    return 16;
+//  }
+//
+//  @Override
+//  protected double computePrefHeight(double width) {
+//    return 16;
+//  }
 
 //  protected abstract Iterator<CellTransformClipTuple<T>> renderCellIterator(double fractionalIndex);
 

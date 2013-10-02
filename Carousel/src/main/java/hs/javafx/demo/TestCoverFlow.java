@@ -124,6 +124,8 @@ public class TestCoverFlow extends Application {
 
     carousel.setMinWidth(500);
     carousel.setMinHeight(300);
+    carousel.setMinWidth(1200);
+    carousel.setMinHeight(500);
 
     TreeItem<ImageHandle> root = new TreeItem<>();
 

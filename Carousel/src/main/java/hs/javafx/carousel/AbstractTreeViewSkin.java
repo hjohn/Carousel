@@ -133,15 +133,16 @@ public class AbstractTreeViewSkin<T> extends BehaviorSkinBase<TreeView<T>, TreeV
     return index;
   }
 
-  @Override
-  protected double computePrefWidth(double height) {
-    return 20;
-  }
-
-  @Override
-  protected double computePrefHeight(double width) {
-    return 20;
-  }
+// TODO removed 2/10/2013
+//  @Override
+//  protected double computePrefWidth(double height) {
+//    return 20;
+//  }
+//
+//  @Override
+//  protected double computePrefHeight(double width) {
+//    return 20;
+//  }
 
   protected CellPool<TreeCell<T>> getCellPool() {
     return cellPool;

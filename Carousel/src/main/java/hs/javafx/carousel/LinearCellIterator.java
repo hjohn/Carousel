@@ -9,7 +9,7 @@ public class LinearCellIterator extends AbstractHorizontalCellIterator {
 
   private int nextCount;
   private int previousCount;
-  private int baseIndex;
+  private final int baseIndex;
 
   private final boolean spaced;
 

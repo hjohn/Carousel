@@ -11,18 +11,19 @@ public class TreeCellSkin extends com.sun.javafx.scene.control.skin.TreeCellSkin
     super(treeCell);
   }
 
-  @Override
-  protected double computePrefWidth(double height) {
-    double labelWidth = super.computePrefWidth(height);
-
-    final Insets padding = getSkinnable().getInsets();
-    double pw = padding.getLeft() + padding.getRight();
-
-    TreeView tree = getSkinnable().getTreeView();
-    if (tree == null) return pw;
-
-    return labelWidth;
-  }
+// TODO removed 2/10/2013
+//  @Override
+//  protected double computePrefWidth(double height) {
+//    double labelWidth = super.computePrefWidth(height);
+//
+//    final Insets padding = getSkinnable().getInsets();
+//    double pw = padding.getLeft() + padding.getRight();
+//
+//    TreeView tree = getSkinnable().getTreeView();
+//    if (tree == null) return pw;
+//
+//    return labelWidth;
+//  }
 
   @Override
   protected void layoutChildren(double x, double y, double w, double h) {
