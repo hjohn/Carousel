@@ -2,8 +2,6 @@ package hs.javafx.carousel.skin;
 
 import hs.javafx.carousel.CellEffects;
 
-import java.util.List;
-
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TreeView;
@@ -16,8 +14,8 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   @Override
-  protected List<FlatLayoutItem> getLayoutItems(double fractionalIndex) {
-    return new FlatLayoutPass(fractionalIndex).createLayout();
+  protected void delegateLayout(double fractionalIndex) {
+    new FlatLayoutPass(fractionalIndex).createLayout();
   }
 
   /**
@@ -78,13 +76,14 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public boolean hasNext() {
-      return hasMoreLeftCells() || hasMoreRightCells();
-    }
-
-    @Override
     protected int nextIndex() {
-      if((hasMoreLeftCells() && previousCount < nextCount) || !hasMoreRightCells()) {
+      boolean hasMoreLeftCells = hasMoreLeftCells();
+      boolean hasMoreRightCells = hasMoreRightCells();
+
+      if(!hasMoreLeftCells && !hasMoreRightCells) {
+        return -1;
+      }
+      if((hasMoreLeftCells && previousCount < nextCount) || !hasMoreRightCells) {
         return baseIndex - previousCount++ - 1;
       }
 
@@ -92,25 +91,17 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public FlatLayoutItem next() {
-      FlatLayoutItem item = super.next();
-
-      customizeCell(this);
-
-      return item;
-    }
-
-    @Override
-    protected void setTranslation() {
+    protected void customizeLayoutItem() {
       double index = currentItem().getRelativeFractionalIndex();
       double offset = getSkinnable().getWidth() / fractionalCellCount * index;
 
       currentItem().setTranslation(offset, 0);
+      customizeCell(this);
     }
 
     @Override
-    public FlatLayoutItem getLayoutItem(int index) {
-      return allocateLayoutItem(index, c -> new FlatLayoutItem(c));
+    public FlatLayoutItem addLayoutItem(int index) {
+      return addVisibleCell(index, c -> new FlatLayoutItem(c));
     }
   }
 

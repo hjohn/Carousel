@@ -2,8 +2,6 @@ package hs.javafx.carousel.skin;
 
 import hs.javafx.carousel.CellEffects;
 
-import java.util.List;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Point2D;
@@ -50,8 +48,8 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   @Override
-  protected List<RayLayoutItem> getLayoutItems(double fractionalIndex) {
-    return new RayLayoutPass(fractionalIndex).createLayout();
+  protected void delegateLayout(double fractionalIndex) {
+    new RayLayoutPass(fractionalIndex).createLayout();
   }
 
   protected void customizeCell(RayLayoutPass layoutPass) {
@@ -197,15 +195,6 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
       return cellCount;
     }
 
-    @Override
-    protected void setTranslation() {
-    }
-
-    @Override
-    public boolean hasNext() {
-      return hasMoreLeftCells() || hasMoreRightCells();
-    }
-
     private boolean hasMoreLeftCells() {
       return baseIndex - previousCount - 1 >= minimumIndex;
     }
@@ -216,22 +205,17 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
     @Override
     protected int nextIndex() {
-      if((hasMoreLeftCells() && previousCount < nextCount) || !hasMoreRightCells()) {
+      boolean hasMoreLeftCells = hasMoreLeftCells();
+      boolean hasMoreRightCells = hasMoreRightCells();
+
+      if(!hasMoreLeftCells && !hasMoreRightCells) {
+        return -1;
+      }
+      if((hasMoreLeftCells && previousCount < nextCount) || !hasMoreRightCells) {
         return baseIndex - previousCount++ - 1;
       }
 
       return baseIndex + nextCount++;
-    }
-
-    @Override
-    public RayLayoutItem next() {
-      RayLayoutItem item = super.next();
-
-      item.setAngleOnCarousel(calculateAngleOnCarousel());
-
-      customizeCell(this);
-
-      return item;
     }
 
     protected double calculateAngleOnCarousel() {
@@ -243,8 +227,14 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public RayLayoutItem getLayoutItem(int index) {
-      return (RayLayoutItem)allocateLayoutItem(index, c -> new RayLayoutItem(c));
+    public RayLayoutItem addLayoutItem(int index) {
+      return addVisibleCell(index, c -> new RayLayoutItem(c));
+    }
+
+    @Override
+    protected void customizeLayoutItem() {
+      currentItem().setAngleOnCarousel(calculateAngleOnCarousel());
+      customizeCell(this);
     }
   }
 

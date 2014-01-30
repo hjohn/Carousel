@@ -1,7 +1,5 @@
 package hs.javafx.carousel.skin;
 
-import java.util.List;
-
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TreeView;
@@ -15,8 +13,8 @@ public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
   }
 
   @Override
-  protected List<RibbonLayoutItem> getLayoutItems(double fractionalIndex) {
-    return new RibbonLayoutPass(fractionalIndex).createLayout();
+  protected void delegateLayout(double fractionalIndex) {
+    new RibbonLayoutPass(fractionalIndex).createLayout();
   }
 
   /**
@@ -41,8 +39,8 @@ public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
       super(fractionalIndex);
 
       int centerIndex = getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
-      this.baseIndex = centerIndex == -1 ? 0 : centerIndex;
 
+      this.baseIndex = centerIndex == -1 ? 0 : centerIndex;
       this.halfWidth = getSkinnable().getWidth() / 2;
     }
 
@@ -55,12 +53,13 @@ public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public boolean hasNext() {
-      return hasMoreLeftCells() || hasMoreRightCells();
-    }
-
-    @Override
     protected int nextIndex() {
+      boolean hasMoreLeftCells = hasMoreLeftCells();
+      boolean hasMoreRightCells = hasMoreRightCells();
+
+      if(!hasMoreLeftCells && !hasMoreRightCells) {
+        return -1;
+      }
       if((hasMoreLeftCells() && previousCount < nextCount) || !hasMoreRightCells()) {
         return baseIndex - previousCount++ - 1;
       }
@@ -69,21 +68,7 @@ public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public RibbonLayoutItem next() {
-      RibbonLayoutItem item = super.next();
-
-      customizeCell(this);
-
-      PerspectiveTransform perspectiveTransform = item.getPerspectiveTransform();
-
-      minX = Math.min(minX, perspectiveTransform.getUlx());
-      maxX = Math.max(maxX, perspectiveTransform.getUrx());
-
-      return item;
-    }
-
-    @Override
-    protected void setTranslation() {
+    protected void customizeLayoutItem() {
       Rectangle2D cellRectangle = currentItem().getCellRectangle(0.5);
       double index = currentItem().getRelativeFractionalIndex();
       double spacing = 10;  // TODO hard-coded currently...
@@ -98,11 +83,18 @@ public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
       }
 
       currentItem().setTranslation(offset, 0);
+
+      customizeCell(this);
+
+      PerspectiveTransform perspectiveTransform = currentItem().getPerspectiveTransform();
+
+      minX = Math.min(minX, perspectiveTransform.getUlx());
+      maxX = Math.max(maxX, perspectiveTransform.getUrx());
     }
 
     @Override
-    public RibbonLayoutItem getLayoutItem(int index) {
-      return allocateLayoutItem(index, c -> new RibbonLayoutItem(c));
+    public RibbonLayoutItem addLayoutItem(int index) {
+      return addVisibleCell(index, c -> new RibbonLayoutItem(c));
     }
   }
 

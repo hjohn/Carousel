@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.WeakHashMap;
 import java.util.function.Function;
 
@@ -44,6 +43,16 @@ import javafx.scene.shape.Shape;
 import javafx.util.Duration;
 
 //TODO Carousel loop around to 0
+/**
+ * Abstract Skin for Carousel that provides layout of Cells with use of {@link LayoutItem}s.  It
+ * provides basic properties for each Carousel, handles cell allocation and final positioning of
+ * the cells (in the proper display order).<p>
+ *
+ * Subclasses need to provide an implementation of {@link #getLayoutItems(double)}, which is called
+ * once per frame if the position of the Carousel changed.
+ *
+ * @param <T> the cell content type
+ */
 public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   private static List<CssMetaData<? extends Styleable, ?>> CSS_META_DATA;
 
@@ -209,7 +218,34 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
     return 16;
   }
 
-  protected <I extends LayoutItem> I allocateLayoutItem(int index, Function<IndexedCell<?>, I> layoutItemProvider) {
+  @Override
+  public TreeCell<T> createCell() {
+    TreeCell<T> treeCell = super.createCell();
+
+    treeCell.boundsInParentProperty().addListener(cellBoundsRequestLayout);
+
+    return treeCell;
+  }
+
+  private final List<LayoutItem> visibleLayoutItems = new ArrayList<>();
+
+  /**
+   * Adds a Cell configured with the given index to the Carousel and returns the associated {@link LayoutItem}.
+   * If no LayoutItem was  associated yet with the given index, a new LayoutItem is created using the
+   * layoutItemProvider.<p>
+   *
+   * This method is called by Skins during the call to {@link #getLayoutItems(double)} (which itself is called
+   * during the Skin's {@link #layoutChildren(double, double, double, double)} call).  Each time a layout is
+   * performed, all Cells are removed from view.  By calling this method Skins can make Cells visible by
+   * having them added to the list of children of the Carousel.<p>
+   *
+   * This method reuses Cells and their associated LayoutItems as much as possible.
+   *
+   * @param index the index of the item in the tree for which a LayoutItem should be added
+   * @param layoutItemProvider a factory that provides {@link LayoutItem} instances
+   * @return the added LayoutItem
+   */
+  protected final <I extends LayoutItem> I addVisibleCell(int index, Function<IndexedCell<?>, I> layoutItemProvider) {
     IndexedCell<?> cell = getCellPool().getCell(index);
 
     getChildren().add(cell);  // Add to children so layout calculations are accurate
@@ -222,30 +258,32 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
       carouselCells.put(cell, item);
     }
 
+    visibleLayoutItems.add(item);
+
     return item;
   }
 
-  @Override
-  public TreeCell<T> createCell() {
-    TreeCell<T> treeCell = super.createCell();
-
-    treeCell.boundsInParentProperty().addListener(cellBoundsRequestLayout);
-
-    return treeCell;
-  }
-
-  protected abstract List<? extends LayoutItem> getLayoutItems(double fractionalIndex);
+  /**
+   * Called during {@link #layoutChildren(double, double, double, double)} to delegate the layout to a
+   * Skin subclass.  Implementors should call {@link #addVisibleCell(int, Function)} as many times as
+   * needed to add the visible cells needed for this layout pass.
+   *
+   * @param fractionalIndex the index of the current tree item at the center of the carousel, where fractions indicate positions inbetween two items.
+   */
+  protected abstract void delegateLayout(double fractionalIndex);
 
   @Override
   protected void layoutChildren(double x, double y, double w, double h) {
+    Shape currentClip = null;
+    Shape cumulativeClip = null;
+
     getSkinnable().setClip(new Rectangle(x, y, w, h));
 
     getCellPool().reset();
     getChildren().clear();
+    visibleLayoutItems.clear();
 
-    List<? extends LayoutItem> items = getLayoutItems(fractionalIndex);
-    Shape currentClip = null;
-    Shape cumulativeClip = null;
+    delegateLayout(fractionalIndex);
 
     /*
      * Loops through all items and puts the appropriate clip on the associated cells.  If
@@ -255,7 +293,7 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
 
     boolean needsClipping = getReflectionsEnabled() && getClipReflections();
 
-    for(LayoutItem item : items) {
+    for(LayoutItem item : visibleLayoutItems) {
       Node cell = item.getCell();
       cell.setEffect(item.getEffect());
 
@@ -316,9 +354,6 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
       this.fractionalIndex = fractionalIndex;
     }
 
-    protected abstract int nextIndex();
-    protected abstract void setTranslation();
-
     protected double getFractionalIndex() {
       return fractionalIndex;
     }
@@ -331,44 +366,31 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
       return currentCell;
     }
 
-    public List<I> createLayout() {
-      List<I> carouselItems = new ArrayList<>();
+    public final void createLayout() {
+      while((index = nextIndex()) >= 0) {
+        currentItem = addLayoutItem(index);
+        currentItem.reset();
+        currentCell = currentItem.getCell();
 
-      for(; hasNext();) {
-        carouselItems.add(next());
+        /*
+         * Set the item's relative fractional index from which its other properties can be
+         * derived.
+         */
+
+        currentItem.setRelativeFractionalIndex(getSkinnable().getFocusModel().getFocusedIndex() - index - fractionalIndex);
+        customizeLayoutItem();
       }
-
-      return carouselItems;
     }
 
-    public I next() {
-      if(!hasNext()) {
-        throw new NoSuchElementException();
-      }
-
-      index = nextIndex();
-      currentItem = getLayoutItem(index);
-      currentItem.reset();
-      currentCell = currentItem.getCell();
-
-      /*
-       * Set the item's relative fractional index from which its other properties can be
-       * derived.
-       */
-
-      currentItem.setRelativeFractionalIndex(getSkinnable().getFocusModel().getFocusedIndex() - index - fractionalIndex);
-      setTranslation();
-
-      return currentItem;
-    }
-
-//    @SuppressWarnings("unchecked")
-//    private I allocateLayoutItem() {
-//      return (I)AbstractCarouselSkin.this.allocateLayoutItem(index, c -> );
-//    }
-//
-    public abstract I getLayoutItem(int index);
-    public abstract boolean hasNext();
+    /**
+     * Returns the next index of a LayoutItem to be added in this layout pass, or -1 if
+     * no more items need to be added.
+     *
+     * @return the next index of a LayoutItem to be added in this layout pass, or -1 if no more items need to be added
+     */
+    protected abstract int nextIndex();
+    protected abstract I addLayoutItem(int index);
+    protected abstract void customizeLayoutItem();
   }
 
   public abstract class AbstractLayoutItem implements LayoutItem {
