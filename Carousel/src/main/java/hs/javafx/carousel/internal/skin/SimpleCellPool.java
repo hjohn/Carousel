@@ -1,4 +1,4 @@
-package hs.javafx.carousel;
+package hs.javafx.carousel.internal.skin;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +48,9 @@ public class SimpleCellPool<V, C extends IndexedCell<?>> implements CellPool<C> 
       }
     }
 
-    cell.updateIndex(index);  // Called always even when index is unchanged as another item might be at the index now
+    if(cell.getIndex() != index) {
+      cell.updateIndex(index);  // This used to be called always even when index is unchanged with the reason that another item might be at the index now... does it still apply? --> Did not cause any problems over a few weeks testing.
+    }
 
     activeCells.put(index, cell);
 
@@ -61,6 +63,7 @@ public class SimpleCellPool<V, C extends IndexedCell<?>> implements CellPool<C> 
       C duplicateCell = availableCells.put(entry.getKey(), entry.getValue());
 
       if(duplicateCell != null) {
+        System.out.println(">>> Discarding duplicate cell, index = " + entry.getKey());
         duplicateCell.updateIndex(-1);  // discard cell
       }
     }

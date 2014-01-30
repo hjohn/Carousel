@@ -1,4 +1,4 @@
-package hs.javafx.carousel;
+package hs.javafx.carousel.internal.skin;
 
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
@@ -15,7 +15,7 @@ public class AbstractTreeViewSkin<T> extends BehaviorSkinBase<TreeView<T>, TreeV
   private final CellPool<TreeCell<T>> cellPool;
 
   public AbstractTreeViewSkin(TreeView<T> treeView) {
-    super(treeView, new TreeViewBehavior<T>(treeView));
+    super(treeView, new TreeViewBehavior<>(treeView));
 
     this.cellPool = new SimpleCellPool<>(treeView, new Callback<TreeView<T>, TreeCell<T>>() {
       @Override
@@ -96,7 +96,6 @@ public class AbstractTreeViewSkin<T> extends BehaviorSkinBase<TreeView<T>, TreeV
     return findLastExpandedLeaf(parent.getChildren().get(index - 1));
   }
 
-  @SuppressWarnings("static-method")
   protected TreeItem<T> next(TreeItem<T> item) {
     if(item.isExpanded() && !item.getChildren().isEmpty()) {
       return item.getChildren().get(0);
@@ -132,17 +131,6 @@ public class AbstractTreeViewSkin<T> extends BehaviorSkinBase<TreeView<T>, TreeV
 
     return index;
   }
-
-// TODO removed 2/10/2013
-//  @Override
-//  protected double computePrefWidth(double height) {
-//    return 20;
-//  }
-//
-//  @Override
-//  protected double computePrefHeight(double width) {
-//    return 20;
-//  }
 
   protected CellPool<TreeCell<T>> getCellPool() {
     return cellPool;

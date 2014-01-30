@@ -1,6 +1,6 @@
 package hs.javafx.demo;
 
-import hs.javafx.carousel.CarouselSkin;
+import hs.javafx.carousel.Carousel;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,7 +16,6 @@ import javafx.scene.control.TreeView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -36,51 +35,54 @@ import javafx.util.Callback;
  *
  * Implementation details
  * ----------------------
- * CarouselSkin delegates much of its functionality to Layouts.  A Layout determines
- * how many cells are needed and where they get placed.  This provides a location for
- * Properties and customization Methods that control the look of the Layout -- these
- * are often very specific and thus are not part of CarouselSkin.
+ * AbstractCarouselSkin provides the basic functionality for creating TreeView based
+ * skins that position their Cells with a PerspectiveTransform.  It provides relevant
+ * properties, keeps track of active Cells and the Carousel's current position.  The
+ * actual placement of the Cells is controlled by subclasses of AbstractCarouselSkin,
+ * which provide further (specialized) properties to control their appearance.
  *
- * When layoutChildren() is called on the Skin, the Layout is asked to provide a
- * CellIterator -- this Iterator provides a number of Cells that need to be positioned.
- * The placement of cells can be dependent on earlier cells that have been positioned and
- * the Iterator has state associated with it to keep track of this.  For example, when
- * cells of different sizes should be positioned so they are touching each other, there is
- * a need to know where previous cells were positioned.  Furthermore, the number of cells
- * the iterator returns differs by implementation.  Some return a constant number of cells
- * (when cells are equally spaced for example) or a number dependent on the sizes of the
- * cells involved.
+ * TreeCells are used for the Cells that make up a Carousel.  Additional data is
+ * associated with these Cells by use of LayoutItem classes.  This was done to prevent
+ * having each Skin using a different Cell-class, which would make switching Skins
+ * cumbersome (as a new CellFactory would need to be provided as well).
  *
- * Some layouts currently also provide ways to override certain behaviour by subclassing
- * them, specifically RayLayout.  This is work in progress.
+ * Skins can provide methods that are called during layout to allow for further
+ * customization of the look of the Carousel.  For example, RayCarouselSkin will allow
+ * the user to apply additional rotations, fade outs, etc. to Cells before the final
+ * PerspectiveTransform is created.
  *
- * The CellIterator is a standard Iterator with one other method that queries the Clip of
- * the last returned cell.  This is used to prevent cells positioned after the current
- * cell to blend with portions of earlier positioned cells -- its main use currently is to
- * avoid reflections from later positioned cells to show through the reflection of earlier
- * positioned cells (which have a higher Z order).
+ * Clipping of Reflections:
  *
- * Without this clip, other cells (with lower Z order) can show through these transparent
- * portions which can cause a blending of the individual reflections of each cell which is
- * undesirable.  The use of clipping however is optional, as it is only needed when Cells
- * are allowed to partially cover each other.
+ * Much effort was put to make Reflections look as realistic as possible.  Reflections
+ * of overlapping items will blend into each other if not clipped due to their partially
+ * transparent nature.  Clipping resolves this but adds quite a burden to the system
+ * (and also on the design of the Skin).  When Cells are known to never overlap (due to
+ * using a low enough density) the clipping can be disabled altogether without a negative
+ * impact to the quality.
  *
- * Notes
- * -----
- * The Carousel and its Layouts provide properties that affect only one aspect of the
- * Carousel rendering at the same time so as to reduce surprises.  Still this can be
- * somewhat counter intuitive.  For example, the carousel restricts cells to a maximum
- * width and height and will always try to draw cells at those sizes regardless of any
- * other settings.
+ * Properties
+ * ----------
+ * The AbstractCarouselSkin and its subclasses provide properties that affect only one
+ * aspect of the Carousel rendering at a time to reduce surprise interactions between
+ * properties to a minimum.
  *
- * This can be somewhat surprising when for example adjusting the view distance -- one
- * would expect the cells (and width of the carousel) to become smaller as the distance
- * increases, however, it only adjusts how deep or squashed the carousel appears (a tele
- * lens kind of effect).
+ * Still this can be somewhat counter intuitive.  For example, the carousel restricts
+ * cells to a maximum width and height and will always try to draw cells at those
+ * sizes regardless of any other settings.  This can be somewhat surprising when for
+ * example adjusting the view distance -- one would expect the cells (and width of the
+ * carousel) to become smaller as the distance increases, however, it only adjusts how
+ * deep or squashed the carousel appears (a telelens kind of effect).
  *
  * Assumptions on Cells provided by Cell Factories
  * -----------------------------------------------
- * Depending on the Layout chosen, certain properties of cells will get overwritten.
+ * The TreeCells have some limitations.  Because a PerspectiveTransform always needs
+ * to be applied, the effect property is reserved for use by the CarouselSkin.  Also,
+ * TreeCells are scaled to fit the maxCellWidth and maxCellHeight restrictions of the
+ * Carousel, regardless of their actual size.  Finally, properties that change the
+ * Cell's position (like translation and scaling) may not work as expected.  Scaling
+ * specifically is automatically accounted for in the final PerspectiveTransform.
+ *
+ * Depending on the used Skin, certain properties of cells will get overwritten.
  *
  * These can include:
  * - Effect property; used to do scaling and reflections
@@ -104,6 +106,7 @@ public class TestCoverFlow extends Application {
     DirectoryChooser directoryChooser = new DirectoryChooser();
 
     directoryChooser.setTitle("Choose a directory with images");
+
     File dir = directoryChooser.showDialog(null);
 
     List<Image> images = new ArrayList<>();
@@ -111,7 +114,7 @@ public class TestCoverFlow extends Application {
 
     for(File file : dir.listFiles()) {
       if(file.isFile()) {
-        images.add(new Image(new FileInputStream(file)));
+        images.add(new Image(new FileInputStream(file), 800, 600, true, true));
         if(fileCount++ > 50) {
           break;
         }
@@ -120,7 +123,7 @@ public class TestCoverFlow extends Application {
 
     BorderPane borderPane = new BorderPane();
 
-    final TreeView<ImageHandle> carousel = new TreeView<>();
+    final Carousel<ImageHandle> carousel = new Carousel<>();
 
     carousel.setMinWidth(500);
     carousel.setMinHeight(300);
@@ -147,8 +150,6 @@ public class TestCoverFlow extends Application {
             if(!empty) {
               ImageView image = item.getImage();
               image.setPreserveRatio(true);
-//              image.fitWidthProperty().bind(carousel.maxCellWidthProperty());
-//              image.fitHeightProperty().bind(carousel.maxCellHeightProperty());
               setGraphic(image);
             }
             else {
@@ -158,8 +159,6 @@ public class TestCoverFlow extends Application {
         };
 
         carouselCell.setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-        carouselCell.setDisclosureNode(new Rectangle(0,0,0,0));
-        //carouselCell.setEffect(new Reflection());
 
         return carouselCell;
       }
@@ -175,7 +174,7 @@ public class TestCoverFlow extends Application {
     stage.setHeight(720);
     stage.show();
 
-    ControlPanel controlPanel = new ControlPanel((CarouselSkin<?>)carousel.getSkin());
+    ControlPanel controlPanel = new ControlPanel(carousel);
 
     borderPane.setBottom(controlPanel);
   }

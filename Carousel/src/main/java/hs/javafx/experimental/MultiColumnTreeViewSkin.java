@@ -1,6 +1,6 @@
 package hs.javafx.experimental;
 
-import hs.javafx.carousel.AbstractTreeViewSkin;
+import hs.javafx.carousel.internal.skin.AbstractTreeViewSkin;
 
 import java.util.ArrayList;
 import java.util.Collections;
