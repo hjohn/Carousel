@@ -1,9 +1,9 @@
 package hs.javafx.demo;
 
-import hs.javafx.carousel.AbstractCarouselSkin;
-import hs.javafx.carousel.FlatCarouselSkin;
-import hs.javafx.carousel.RayCarouselSkin;
-import hs.javafx.carousel.RibbonCarouselSkin;
+import hs.javafx.carousel.skin.AbstractCarouselSkin;
+import hs.javafx.carousel.skin.FlatCarouselSkin;
+import hs.javafx.carousel.skin.RayCarouselSkin;
+import hs.javafx.carousel.skin.RibbonCarouselSkin;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;

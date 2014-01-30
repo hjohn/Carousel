@@ -1,4 +1,4 @@
-package hs.javafx.carousel;
+package hs.javafx.carousel.skin;
 
 import java.util.List;
 
@@ -7,15 +7,16 @@ import javafx.scene.control.IndexedCell;
 import javafx.scene.control.TreeView;
 import javafx.scene.effect.PerspectiveTransform;
 
-public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
+// TODO cell density is meaningless for non-spaced version; cell spacing is only meaningful for non-spaced version
+public class RibbonCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
-  public FlatCarouselSkin(TreeView<T> carousel) {
+  public RibbonCarouselSkin(TreeView<T> carousel) {
     super(carousel);
   }
 
   @Override
-  protected List<FlatLayoutItem> getLayoutItems(double fractionalIndex) {
-    return new FlatLayoutPass(fractionalIndex).createLayout();
+  protected List<RibbonLayoutItem> getLayoutItems(double fractionalIndex) {
+    return new RibbonLayoutPass(fractionalIndex).createLayout();
   }
 
   /**
@@ -24,55 +25,33 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
    *
    * @param layoutPass a layout pass
    */
-  protected void customizeCell(FlatLayoutPass layoutPass) {
-    fadeOutEdgeCells(layoutPass, 0.5);
+  protected void customizeCell(RibbonLayoutPass layoutPass) {
   }
 
-  @SuppressWarnings("static-method")
-  protected void fadeOutEdgeCells(FlatLayoutPass layoutPass, double fadeOutCellCount) {
-    layoutPass.current().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.cellCount, fadeOutCellCount));
-  }
-
-  public class FlatLayoutPass extends AbstractLayoutPass<FlatLayoutItem> {
+  public class RibbonLayoutPass extends AbstractLayoutPass<RibbonLayoutItem> {
     private final int baseIndex;
-    private final int cellCount;
-    private final int minimumIndex;
-    private final int maximumIndex;
-    private final double fractionalCellCount;
+    private final double halfWidth;
 
     private int nextCount;
     private int previousCount;
+    private double minX = Double.MAX_VALUE;
+    private double maxX = Double.MIN_VALUE;
 
-    public FlatLayoutPass(double fractionalIndex) {
+    public RibbonLayoutPass(double fractionalIndex) {
       super(fractionalIndex);
 
       int centerIndex = getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
       this.baseIndex = centerIndex == -1 ? 0 : centerIndex;
-      this.fractionalCellCount = calculateCellCount();
 
-      int cellCount = (int)fractionalCellCount;
-
-      if(cellCount % 2 == 0) {
-        cellCount--;
-      }
-
-      this.cellCount = cellCount;
-      this.minimumIndex = Math.max(0, centerIndex - (cellCount - 1) / 2);
-      this.maximumIndex = Math.min(getSkinnable().getExpandedItemCount() - 1, centerIndex + cellCount / 2);
-    }
-
-    protected double calculateCellCount() {
-      double count = getSkinnable().getWidth() / getMaxCellWidth() * getDensity();
-
-      return count < 3 ? 3 : count;
+      this.halfWidth = getSkinnable().getWidth() / 2;
     }
 
     private boolean hasMoreLeftCells() {
-      return baseIndex - previousCount - 1 >= minimumIndex;
+      return minX > -halfWidth && baseIndex - previousCount - 1 >= 0;
     }
 
     private boolean hasMoreRightCells() {
-      return baseIndex + nextCount <= maximumIndex;
+      return maxX < halfWidth && baseIndex + nextCount <= (getSkinnable().getExpandedItemCount() - 1);
     }
 
     @Override
@@ -90,31 +69,46 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
     }
 
     @Override
-    public FlatLayoutItem next() {
-      FlatLayoutItem item = super.next();
+    public RibbonLayoutItem next() {
+      RibbonLayoutItem item = super.next();
 
       customizeCell(this);
+
+      PerspectiveTransform perspectiveTransform = item.getPerspectiveTransform();
+
+      minX = Math.min(minX, perspectiveTransform.getUlx());
+      maxX = Math.max(maxX, perspectiveTransform.getUrx());
 
       return item;
     }
 
     @Override
     protected void setTranslation() {
+      Rectangle2D cellRectangle = currentItem().getCellRectangle(0.5);
       double index = currentItem().getRelativeFractionalIndex();
-      double offset = getSkinnable().getWidth() / fractionalCellCount * index;
+      double spacing = 10;  // TODO hard-coded currently...
+      double offset;
+
+      if(minX == Double.MAX_VALUE && maxX == Double.MIN_VALUE) {
+        offset = cellRectangle.getWidth() * index;  // this isn't perfect, scroll speed will depend on width of the center cell
+      }
+      else {
+        offset = index < 0 ? -(maxX + cellRectangle.getWidth() / 2 + spacing)
+                           : -(minX - cellRectangle.getWidth() / 2 - spacing);
+      }
 
       currentItem().setTranslation(offset, 0);
     }
 
     @Override
-    public FlatLayoutItem getLayoutItem(int index) {
-      return allocateLayoutItem(index, c -> new FlatLayoutItem(c));
+    public RibbonLayoutItem getLayoutItem(int index) {
+      return allocateLayoutItem(index, c -> new RibbonLayoutItem(c));
     }
   }
 
-  public class FlatLayoutItem extends AbstractCarouselSkin<T>.AbstractLayoutItem {
+  public class RibbonLayoutItem extends AbstractCarouselSkin<T>.AbstractLayoutItem { // TODO same as FlatLayoutItem... merge somehow.
 
-    public FlatLayoutItem(IndexedCell<?> cell) {
+    public RibbonLayoutItem(IndexedCell<?> cell) {
       super(cell);
     }
 

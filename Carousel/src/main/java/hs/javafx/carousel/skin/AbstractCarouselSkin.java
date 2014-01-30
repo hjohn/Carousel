@@ -1,4 +1,4 @@
-package hs.javafx.carousel;
+package hs.javafx.carousel.skin;
 
 import hs.javafx.carousel.internal.skin.AbstractTreeViewSkin;
 import hs.javafx.carousel.internal.skin.LayoutItem;

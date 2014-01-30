@@ -1,5 +1,5 @@
 .carousel {
-  -fx-skin: "hs.javafx.carousel.RayCarouselSkin";
+  -fx-skin: "hs.javafx.carousel.skin.RayCarouselSkin";
 }
 
 .carousel .tree-cell {

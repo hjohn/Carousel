@@ -1,4 +1,6 @@
-package hs.javafx.carousel;
+package hs.javafx.carousel.skin;
+
+import hs.javafx.carousel.CellEffects;
 
 import java.util.List;
 
