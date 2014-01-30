@@ -30,7 +30,7 @@ public class FlatCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
   @SuppressWarnings("static-method")
   protected void fadeOutEdgeCells(FlatLayoutPass layoutPass, double fadeOutCellCount) {
-    layoutPass.current().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.cellCount, fadeOutCellCount));
+    layoutPass.currentItem().getCell().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.cellCount, fadeOutCellCount));
   }
 
   public class FlatLayoutPass extends AbstractLayoutPass<FlatLayoutItem> {

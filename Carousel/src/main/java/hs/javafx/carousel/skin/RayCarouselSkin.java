@@ -93,7 +93,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
   @SuppressWarnings("static-method")
   protected void fadeOutEdgeCells(RayLayoutPass layoutPass, double fadeOutCellCount) {
-    layoutPass.current().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.getCellCount(), fadeOutCellCount));
+    layoutPass.currentItem().getCell().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.getCellCount(), fadeOutCellCount));
   }
 
   /**

@@ -347,30 +347,21 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
     private final double fractionalIndex;
 
     private I currentItem;
-    private Node currentCell;
-    private int index;
 
     public AbstractLayoutPass(double fractionalIndex) {
       this.fractionalIndex = fractionalIndex;
-    }
-
-    protected double getFractionalIndex() {
-      return fractionalIndex;
     }
 
     public I currentItem() {
       return currentItem;
     }
 
-    public Node current() {
-      return currentCell;
-    }
-
     public final void createLayout() {
+      int index;
+
       while((index = nextIndex()) >= 0) {
         currentItem = addLayoutItem(index);
         currentItem.reset();
-        currentCell = currentItem.getCell();
 
         /*
          * Set the item's relative fractional index from which its other properties can be
