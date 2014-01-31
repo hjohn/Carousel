@@ -107,9 +107,7 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
 
     @Override
     protected void interpolate(double frac) {
-      double clampedFrac = frac;// > 0.25 ? 1.0 : frac * 4;
-
-      fractionalIndex = startFractionalIndex - startFractionalIndex * clampedFrac;
+      fractionalIndex = startFractionalIndex - startFractionalIndex * frac;
       getSkinnable().requestLayout();
     }
   };
