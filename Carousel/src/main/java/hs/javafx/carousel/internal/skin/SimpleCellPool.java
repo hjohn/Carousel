@@ -48,9 +48,10 @@ public class SimpleCellPool<V, C extends IndexedCell<?>> implements CellPool<C> 
       }
     }
 
-    if(cell.getIndex() != index) {
+    // TODO This is required apparently when a TreeNode is opened and new Items appear at indices previously occupied by other items
+//    if(cell.getIndex() != index) {
       cell.updateIndex(index);  // This used to be called always even when index is unchanged with the reason that another item might be at the index now... does it still apply? --> Did not cause any problems over a few weeks testing.
-    }
+  //  }
 
     activeCells.put(index, cell);
 

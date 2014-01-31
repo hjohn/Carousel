@@ -146,6 +146,8 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
   public AbstractCarouselSkin(final TreeView<T> carousel) {
     super(carousel);
 
+    carousel.expandedItemCountProperty().addListener(requestLayout);
+
     carousel.widthProperty().addListener(requestLayout);
     carousel.getFocusModel().focusedIndexProperty().addListener(moveCarousel);
 
@@ -159,6 +161,8 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
 
   @Override
   public void dispose() {
+    getSkinnable().expandedItemCountProperty().removeListener(requestLayout);
+
     getSkinnable().widthProperty().removeListener(requestLayout);
     getSkinnable().getFocusModel().focusedIndexProperty().removeListener(moveCarousel);
 
@@ -267,6 +271,7 @@ public abstract class AbstractCarouselSkin<T> extends AbstractTreeViewSkin<T> {
    * needed to add the visible cells needed for this layout pass.
    *
    * @param fractionalIndex the index of the current tree item at the center of the carousel, where fractions indicate positions inbetween two items.
+   * TODO description of FI is wrong
    */
   protected abstract void delegateLayout(double fractionalIndex);
 

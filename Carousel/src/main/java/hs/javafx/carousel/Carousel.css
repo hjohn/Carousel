@@ -5,7 +5,8 @@
 .carousel .tree-cell {
   -fx-border-width: 0px;
   -fx-padding: 0px;
-
+  -fx-indent: 0px;
+  
   /* Necessary to get rid of indent/padding/spacing caused by disclosure node */
   -fx-skin: "hs.javafx.carousel.internal.skin.EmptyTreeCellSkin";
 }

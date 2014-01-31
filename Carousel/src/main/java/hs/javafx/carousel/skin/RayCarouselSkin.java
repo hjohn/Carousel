@@ -1,13 +1,13 @@
 package hs.javafx.carousel.skin;
 
 import hs.javafx.carousel.CellEffects;
-
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.control.IndexedCell;
+import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeView;
 import javafx.scene.effect.PerspectiveTransform;
 
@@ -93,7 +93,12 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
   @SuppressWarnings("static-method")
   protected void fadeOutEdgeCells(RayLayoutPass layoutPass, double fadeOutCellCount) {
-    layoutPass.currentItem().getCell().setOpacity(CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.getCellCount(), fadeOutCellCount));
+    double opacity = CellEffects.calculateEdgeCellOpacity(layoutPass.currentItem().getRelativeFractionalIndex(), layoutPass.getCellCount(), fadeOutCellCount);
+    double depth = TreeView.getNodeLevel(((TreeCell<?>)layoutPass.currentItem().getCell()).getTreeItem()) - layoutPass.depth;
+
+    opacity /= Math.pow(1.6, Math.abs(depth));
+
+    layoutPass.currentItem().getCell().setOpacity(opacity);
   }
 
   /**
@@ -170,12 +175,15 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     private final int maximumIndex;
     private final double fractionalCellCount;
     private final int cellCount;
+    private final double depth;
 
     private int nextCount;
     private int previousCount;
 
     public RayLayoutPass(double fractionalIndex) {
       super(fractionalIndex);
+
+      depth = determineDepthCorrection(getSkinnable().getFocusModel().getFocusedIndex() - fractionalIndex);
 
       int centerIndex = getSkinnable().getFocusModel().getFocusedIndex() - (int)Math.round(fractionalIndex);
 
@@ -189,6 +197,17 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
       this.cellCount = count % 2 == 0 ? count - 1 : count;  // always uneven
       this.minimumIndex = Math.max(0, centerIndex - cellCount / 2);
       this.maximumIndex = Math.min(getSkinnable().getExpandedItemCount() - 1, centerIndex + cellCount / 2);
+    }
+
+    private double determineDepthCorrection(double fractionalIndex) {
+      int leftIndex = (int)fractionalIndex;
+      int rightIndex = (int)(fractionalIndex + 1);
+      double fraction = fractionalIndex - leftIndex;
+
+      double depthLeft = TreeView.getNodeLevel(getSkinnable().getTreeItem(leftIndex));
+      double depthRight = TreeView.getNodeLevel(getSkinnable().getTreeItem(rightIndex));
+
+      return depthLeft * (1.0 - fraction) + depthRight * fraction;
     }
 
     public int getCellCount() {
@@ -234,6 +253,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
     @Override
     protected void customizeLayoutItem() {
       currentItem().setAngleOnCarousel(calculateAngleOnCarousel());
+      currentItem().setCarouselDepth(depth);
       customizeCell(this);
     }
   }
@@ -245,6 +265,7 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
      */
 
     private double angleOnCarousel;
+    private double carouselDepth;
 
     /*
      * Derived fields:
@@ -277,6 +298,14 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
 
     public void setAngleOnCarousel(double angleOnCarousel) {
       this.angleOnCarousel = angleOnCarousel;
+    }
+    
+    public double getCarouselDepth() {
+      return carouselDepth;
+    }
+
+    public void setCarouselDepth(double carouselDepth) {
+      this.carouselDepth = carouselDepth;
     }
 
     @Override
@@ -327,7 +356,10 @@ public class RayCarouselSkin<T> extends AbstractCarouselSkin<T> {
       double sin = -Math.sin(angleOnCarousel);
       double cos = -Math.cos(angleOnCarousel);
 
-      double l = getCarouselRadius() - cellRectangle.getMinX();
+      double depth = TreeView.getNodeLevel(((TreeCell<?>)getCell()).getTreeItem());
+      double radius = getCarouselRadius() / Math.pow(1.3, depth - this.carouselDepth);
+
+      double l = radius - cellRectangle.getMinX();
       double r = l - cellRectangle.getWidth();
 
       double lx = l * sin;
